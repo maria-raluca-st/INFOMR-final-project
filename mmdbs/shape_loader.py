@@ -11,7 +11,8 @@ def main():
     cls = choose_class()
     objs = (ORIGINAL_SHAPEDIR / cls).iterdir()
     # Currently only showing the first one
-    vedo.load(str(next(objs))).show().close()
+    vedo_objs = [vedo.load(str(obj)) for obj in objs]
+    vedo.show(*vedo_objs).close()
 
 
 def choose_class() -> str:
@@ -20,7 +21,7 @@ def choose_class() -> str:
     for classes in batched(cycle(CLASSES), batch_size):
         print(*enumerate(classes))
         i = input()
-        if i == 'n':
+        if i in ['n', '']:
             continue
         return classes[int(i)]
     
