@@ -4,7 +4,7 @@ import crossfiledialog
 
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
-import time
+import datetime
 
 
 class MeshViewer:
@@ -53,6 +53,9 @@ class MeshViewer:
     def resetCamera(self, obj, ename):
         self.plt.reset_camera()
 
+    def screenshotPlot(self, obj, ename):
+        self.plt.screenshot(f"./img/{datetime.datetime.now()}.png")
+
     def buildGui(self):
 
         # Add a button to the plotter with buttonfunc as the callback function
@@ -88,6 +91,18 @@ class MeshViewer:
             self.resetCamera,
             pos=(0.15, 0.85),
             states=["reset camera"],
+            c=["w"],
+            bc=["dg"],
+            font="courier",
+            size=20,
+            bold=False,
+            italic=False,
+        )
+
+        self.screenshot_btn = self.plt.add_button(
+            self.screenshotPlot,
+            pos=(0.15, 0.80),
+            states=["screenshot"],
             c=["w"],
             bc=["dg"],
             font="courier",
