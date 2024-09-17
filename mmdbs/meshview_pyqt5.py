@@ -6,12 +6,16 @@ import sys
 # Define a function that toggles the transparency of a mesh and changes the button state
 import time
 
+file_low = "../shapes/Door/D01062.obj"
+file_high = "../shapes/Apartment/D00045.obj"
+file_non_uniform = "../shapes/Tool/m1108.obj"
+
 class MeshViewer:
     def __init__(self, file=None):
         if not file:  # Some default mesh from online
             self.mesh = Mesh(dataurl + "magnolia.vtk").c("violet").flat()
         else:
-            self.mesh = Mesh(file).c("violet").flat()
+            self.mesh = Mesh(file).c("violet")
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
         self.show()
 
@@ -111,4 +115,4 @@ class MeshViewer:
 
 if __name__ == "__main__":
     print("Starting Mesh Viewer")
-    mv = MeshViewer()
+    mv = MeshViewer(file = file_non_uniform)
