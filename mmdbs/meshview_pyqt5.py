@@ -10,6 +10,15 @@ file_low = "../shapes/Door/D01062.obj"
 file_high = "../shapes/Apartment/D00045.obj"
 file_non_uniform = "../shapes/Tool/m1108.obj"
 
+def file_dialog():
+    try:
+        import crossfiledialog
+        return crossfiledialog.open_file()
+    except:
+        app = QApplication(sys.argv)  
+        return QFileDialog.getOpenFileName(None, "Open 3D Model", "", "3D Files (*.obj *.stl *.ply *.vtk)")
+
+
 class MeshViewer:
     def __init__(self, file=None):
         if not file:  # Some default mesh from online
@@ -27,9 +36,7 @@ class MeshViewer:
         self.plt.show(self.mesh, __doc__)
 
     def importObject(self, obj, ename):
-        app = QApplication(sys.argv)  
-
-        file, _ = QFileDialog.getOpenFileName(None, "Open 3D Model", "", "3D Files (*.obj *.stl *.ply *.vtk)")
+        file, _ = file_dialog()#QFileDialog.getOpenFileName(None, "Open 3D Model", "", "3D Files (*.obj *.stl *.ply *.vtk)")
         if file:
             try:
                 print(f"Importing {file}")
