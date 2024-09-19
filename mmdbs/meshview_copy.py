@@ -6,22 +6,24 @@ import crossfiledialog
 #  and changes the button state
 import datetime
 
-
 class MeshViewer:
     def __init__(self, file=None):
-        if not file:  # Some default mesh from online
-            self.mesh = Mesh(dataurl + "magnolia.vtk").c("violet").flat()
-        else:
-            self.mesh = Mesh(file).c("violet").flat()
+        filepath = "../shapes\PlantIndoors\D00159.obj"
+        
+        self.mesh = Mesh(filepath).c("violet").flat()
+        self.mesh.force_opaque().linewidth(1)
+        self.meshes = [self.mesh]
+        print(self.mesh)
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
         self.show()
+        
 
     def show(self):
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
 
         self.buildGui()
-        self.plt.show(self.mesh, __doc__)
+        self.plt.show(self.meshes, __doc__)
 
     def importObject(self, obj, ename):
         file = crossfiledialog.open_file()
@@ -54,16 +56,21 @@ class MeshViewer:
         self.plt.reset_camera()
 
     def screenshotPlot(self, obj, ename):
+        str = f"{datetime.datetime.now()}"
+        print(f"screenshotting {str}")
         self.hideGui()
-        self.plt.screenshot(f"./img/{datetime.datetime.now()}.png")
+        self.plt.screenshot(f"Image.png")
         self.buildGui()
-    
+
     def hideGui(self):
         self.plt.remove(self.view_btn)
         self.plt.remove(self.import_btn)
         self.plt.remove(self.camera_btn)
         self.plt.remove(self.screenshot_btn)
 
+
+    
+    
     def buildGui(self):
 
         # Add a button to the plotter with buttonfunc as the callback function
@@ -118,8 +125,8 @@ class MeshViewer:
             bold=False,
             italic=False,
         )
-
-
+        
 if __name__ == "__main__":
     print("Starting Mesh View")
     mv = MeshViewer()
+    

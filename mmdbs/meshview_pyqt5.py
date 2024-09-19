@@ -65,7 +65,13 @@ class MeshViewer:
             bold=False,
             italic=False,
         )
-
+    
+    def hideGui(self):
+        self.plt.remove(self.view_btn)
+        self.plt.remove(self.import_btn)
+        self.plt.remove(self.camera_btn)
+        self.plt.remove(self.screenshot_btn)
+        
     def resetCamera(self, obj, ename):
      # Reset to the original camera settings
      self.plt.camera = self.orig_camera  # Use saved original camera
