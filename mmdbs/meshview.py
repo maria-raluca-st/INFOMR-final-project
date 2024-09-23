@@ -9,13 +9,16 @@ import datetime
 
 class MeshViewer:
     def __init__(self, file=None):
+        
+        self.hidden = False
+        self.lines = False
+
         if not file:  # Some default mesh from online
             self.mesh = Mesh(dataurl + "magnolia.vtk").c("violet").flat()
         else:
             self.mesh = Mesh(file).c("violet").flat()
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
         self.show()
-
     def show(self):
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
@@ -38,30 +41,60 @@ class MeshViewer:
     def switchView(self, obj, ename):
         status = self.view_btn.status()
         if status == "click to hide":
-            self.mesh.alpha(0)
-            self.mesh.linewidth(0)
-        elif status == "click to show obj":
+            self.hidden=True
+            if(self.lines):
+                self.mesh.wireframe(True)
+            else:
+                self.mesh.alpha(0)
+            
+        elif status == "flat shading":
+            self.mesh.flat()
+            self.hidden=False
+            self.mesh.wireframe(False)
             self.mesh.alpha(1)
-            self.mesh.linewidth(0)
             self.mesh.c("violet")
 
-        elif status == "click to show mesh":
-            self.mesh.force_opaque().linewidth(1)
+        elif status == "smooth shading":
+            self.mesh.phong()
+            self.mesh.wireframe(False)
+
+        elif status == "random colors":
+            self.mesh.wireframe(False)
             self.mesh.cellcolors = self.rgba
+
         self.view_btn.switch()
+    
+    def triggerMesh(self, obj, ename):
+        if(self.mesh_btn.status()=="show edges"):
+            self.mesh.alpha(1)
+            self.lines=True
+            if(self.hidden):
+                self.mesh.wireframe(True)
+            self.mesh.linewidth(1)
+        else:
+            if(self.hidden):
+                self.mesh.alpha(0)
+            self.lines = False
+            self.mesh.wireframe(False)
+            self.mesh.linewidth(0)
+        self.mesh_btn.switch()
+        
 
     def resetCamera(self, obj, ename):
         self.plt.reset_camera()
 
     def screenshotPlot(self, obj, ename):
+        print("Screenshot")
         self.hideGui()
-        self.plt.screenshot(f"./img/{datetime.datetime.now()}.png")
+        self.plt.screenshot(f"image.png")
         self.buildGui()
     
     def hideGui(self):
         self.plt.remove(self.view_btn)
         self.plt.remove(self.import_btn)
         self.plt.remove(self.camera_btn)
+        self.plt.remove(self.mesh_btn)
+
         self.plt.remove(self.screenshot_btn)
 
     def buildGui(self):
@@ -72,8 +105,23 @@ class MeshViewer:
             pos=(0.15, 0.95),  # x,y fraction from bottom left corner
             states=[
                 "click to hide",
-                "click to show obj",
-                "click to show mesh",
+                "flat shading",
+                "smooth shading",
+                "random colors",
+            ],  # text for each state
+            c=["w", "w", "w","w"],  # font color for each state
+            bc=["dv", "dv", "dv","dv"],  # background color for each state
+            font="courier",  # font type
+            size=20,  # font size
+            bold=False,  # bold font
+            italic=False,  # non-italic font style
+        )
+        self.mesh_btn = self.plt.add_button(
+            self.triggerMesh,
+            pos=(0.15, 0.9),  # x,y fraction from bottom left corner
+            states=[
+                "show edges",
+                "hide edges",
             ],  # text for each state
             c=["w", "w", "w"],  # font color for each state
             bc=["dg", "dv", "dr"],  # background color for each state
@@ -85,7 +133,7 @@ class MeshViewer:
 
         self.import_btn = self.plt.add_button(
             self.importObject,
-            pos=(0.15, 0.9),
+            pos=(0.15, 0.85),
             states=["import object"],
             c=["w"],
             bc=["dg"],
@@ -97,7 +145,7 @@ class MeshViewer:
 
         self.camera_btn = self.plt.add_button(
             self.resetCamera,
-            pos=(0.15, 0.85),
+            pos=(0.15, 0.8),
             states=["reset camera"],
             c=["w"],
             bc=["dg"],
@@ -109,7 +157,7 @@ class MeshViewer:
 
         self.screenshot_btn = self.plt.add_button(
             self.screenshotPlot,
-            pos=(0.15, 0.80),
+            pos=(0.15, 0.75),
             states=["screenshot"],
             c=["w"],
             bc=["dg"],
