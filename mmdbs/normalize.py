@@ -1,7 +1,7 @@
 from vedo import Mesh, LinearTransform
 import numpy as np
 
-def normalize_shape(mesh:Mesh):
+def normalize_shape(mesh:Mesh,inplace=True):
     """
     Applies several steps of normalisation to provide a comparable baseline for each mesh
     ----------------------------
@@ -10,12 +10,16 @@ def normalize_shape(mesh:Mesh):
     Returns:
         Vedo Mesh
     """
-    npos = normalize_position(mesh)
-    nrot = normalize_pose(npos)
-    nver = normalize_vertices(nrot)
-    nflip = normalize_flip(nver)
-    nsize = normalize_scale(nflip)
-    return nsize
+    if(not inplace):
+        wMesh=mesh.copy()
+    else:
+        wMesh=mesh
+    normalize_position(wMesh)
+    normalize_pose(wMesh)
+    normalize_vertices(wMesh)
+    normalize_flip(wMesh)
+    normalize_scale(wMesh)
+    return wMesh
 
 def get_eigenvectors(mesh:Mesh):
     """
