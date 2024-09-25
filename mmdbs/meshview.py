@@ -44,9 +44,11 @@ class MeshViewer:
             try:
                 print(f"importing {file}")
                 self.plt.remove(self.mesh)
+                self.plt.remove(self.origMesh)
                 self.mesh = Mesh(file).c("violet").flat()
+                self.origMesh = self.mesh.copy().c("black").wireframe(True)
                 self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
-                self.plt.add(self.mesh)
+                self.plt.add(self.mesh,self.origMesh)
             except:
                 print("Unable to add mesh from file", file)
 
@@ -256,5 +258,5 @@ class MeshViewer:
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    file = "..\shapes\AircraftBuoyant\m1343.obj"
+    file = "../shapes\Door\D01104.obj"
     mv = MeshViewer(file=file)
