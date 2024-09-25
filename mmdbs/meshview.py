@@ -1,4 +1,4 @@
-from vedo import Plotter, Mesh, dataurl
+from vedo import Plotter, Mesh, dataurl,Line, Box
 import numpy as np
 import crossfiledialog
 
@@ -18,7 +18,15 @@ class MeshViewer:
         else:
             self.mesh = Mesh(file).c("violet").flat()
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
+
+        self.z_axis = Line([0,0,0], [0,0,2], lw=3).c("Blue")
+        self.y_axis = Line([0,0,0], [0,2,0], lw=3).c("Green")
+        self.x_axis = Line([0,0,0], [2,0,0], lw=3).c("Red")
+
+        self.unit_box = Box(width=1,height=1,length=1).c("Black").wireframe(True)
+        
         self.show()
+    
     def show(self):
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
@@ -95,6 +103,7 @@ class MeshViewer:
         self.plt.remove(self.camera_btn)
         self.plt.remove(self.mesh_btn)
         self.plt.remove(self.norm_btn)
+        self.plt.remove(self.set_btn)
         self.plt.remove(self.screenshot_btn)
     
     def normalize(self,obj,ename):
@@ -110,6 +119,18 @@ class MeshViewer:
         elif(status == "normalize size"):
             print("Normalizing Size")
         self.norm_btn.switch()
+
+    def set_options(self,obj,ename):
+        status = self.set_btn.status()
+        if(status =="show axis"):
+            self.plt.add(self.x_axis,self.y_axis,self.z_axis)
+        elif(status =="show unit box"):
+            self.plt.add(self.unit_box)
+        elif(status =="hide axis"):
+            self.plt.remove(self.x_axis,self.y_axis,self.z_axis)
+        elif(status == "hide unit box"):
+            self.plt.remove(self.unit_box)
+        self.set_btn.switch()
 
 
 
@@ -181,11 +202,22 @@ class MeshViewer:
             bold=False,
             italic=False,
         )
+        self.set_btn = self.plt.add_button(
+            self.set_options,
+            pos=(0.15, 0.70),
+            states=["show axis","show unit box","hide axis","hide unit box"],
+            c=["w"],
+            bc=["dg"],
+            font="courier",
+            size=20,
+            bold=False,
+            italic=False,
+        )
 
 
         self.screenshot_btn = self.plt.add_button(
             self.screenshotPlot,
-            pos=(0.15, 0.70),
+            pos=(0.15, 0.65),
             states=["screenshot"],
             c=["w"],
             bc=["dg"],
