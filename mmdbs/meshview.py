@@ -94,8 +94,24 @@ class MeshViewer:
         self.plt.remove(self.import_btn)
         self.plt.remove(self.camera_btn)
         self.plt.remove(self.mesh_btn)
-
+        self.plt.remove(self.norm_btn)
         self.plt.remove(self.screenshot_btn)
+    
+    def normalize(self,obj,ename):
+        status = self.norm_btn.status()
+        if(status =="normalize position"):
+            print("Normalizing Position")
+        elif(status =="normalize pose"):
+            print("Normalizing Pose")
+        elif(status =="normalize vertices"):
+            print("Normalizing Vertices")
+        elif(status == "normalize orientation"):
+            print("Normalizing Orientation")
+        elif(status == "normalize size"):
+            print("Normalizing Size")
+        self.norm_btn.switch()
+
+
 
     def buildGui(self):
 
@@ -154,10 +170,22 @@ class MeshViewer:
             bold=False,
             italic=False,
         )
+        self.norm_btn = self.plt.add_button(
+            self.normalize,
+            pos=(0.15, 0.75),
+            states=["normalize position","normalize pose","normalize vertices","normalize orientation","normalize size"],
+            c=["w"],
+            bc=["dg"],
+            font="courier",
+            size=20,
+            bold=False,
+            italic=False,
+        )
+
 
         self.screenshot_btn = self.plt.add_button(
             self.screenshotPlot,
-            pos=(0.15, 0.75),
+            pos=(0.15, 0.70),
             states=["screenshot"],
             c=["w"],
             bc=["dg"],
@@ -170,4 +198,5 @@ class MeshViewer:
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    mv = MeshViewer()
+    file = "..\shapes\AircraftBuoyant\m1343.obj"
+    mv = MeshViewer(file=file)
