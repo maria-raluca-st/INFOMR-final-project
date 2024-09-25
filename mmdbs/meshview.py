@@ -1,7 +1,7 @@
 from vedo import Plotter, Mesh, dataurl,Line, Box
 import numpy as np
 import crossfiledialog
-
+from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
 import datetime
@@ -19,15 +19,19 @@ class MeshViewer:
             self.mesh = Mesh(file).c("violet").flat()
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
 
+        #Help Display 
         self.z_axis = Line([0,0,0], [0,0,2], lw=3).c("Blue")
         self.y_axis = Line([0,0,0], [0,2,0], lw=3).c("Green")
         self.x_axis = Line([0,0,0], [2,0,0], lw=3).c("Red")
-
         self.unit_box = Box(width=1,height=1,length=1).c("Black").wireframe(True)
-        
+        self.origMesh = self.mesh.copy().c("Black").wireframe(True)
+
         self.show()
+
+        
     
     def show(self):
+        
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
 
@@ -105,19 +109,20 @@ class MeshViewer:
         self.plt.remove(self.norm_btn)
         self.plt.remove(self.set_btn)
         self.plt.remove(self.screenshot_btn)
+        self.plt.remove(self.orig_btn)
     
     def normalize(self,obj,ename):
         status = self.norm_btn.status()
         if(status =="normalize position"):
-            print("Normalizing Position")
+            normalize_position(self.mesh)
         elif(status =="normalize pose"):
-            print("Normalizing Pose")
+            normalize_pose(self.mesh)
         elif(status =="normalize vertices"):
-            print("Normalizing Vertices")
+            normalize_vertices(self.mesh)
         elif(status == "normalize orientation"):
-            print("Normalizing Orientation")
+            normalize_flip(self.mesh)
         elif(status == "normalize size"):
-            print("Normalizing Size")
+            normalize_scale(self.mesh)
         self.norm_btn.switch()
 
     def set_options(self,obj,ename):
@@ -131,6 +136,16 @@ class MeshViewer:
         elif(status == "hide unit box"):
             self.plt.remove(self.unit_box)
         self.set_btn.switch()
+
+    def trigger_orig(self,obj,ename):
+        status = self.orig_btn.status()
+        if(status =="show original"):
+            self.plt.add(self.origMesh)
+        elif(status =="hide original"):
+            self.plt.remove(self.origMesh)
+        self.orig_btn.switch()
+
+
 
 
 
@@ -213,11 +228,22 @@ class MeshViewer:
             bold=False,
             italic=False,
         )
+        self.orig_btn = self.plt.add_button(
+            self.trigger_orig,
+            pos=(0.15, 0.65),
+            states=["show original","hide original"],
+            c=["w"],
+            bc=["dg"],
+            font="courier",
+            size=20,
+            bold=False,
+            italic=False,
+        )
 
 
         self.screenshot_btn = self.plt.add_button(
             self.screenshotPlot,
-            pos=(0.15, 0.65),
+            pos=(0.15, 0.60),
             states=["screenshot"],
             c=["w"],
             bc=["dg"],
