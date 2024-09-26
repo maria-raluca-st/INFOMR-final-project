@@ -278,5 +278,5 @@ Off Center Guitar\D00534.obj
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    file = "../shapes\FloorLamp\m619.obj"
+    file = "../shapes\PlantIndoors\D00159.obj"
     mv = MeshViewer(file=file)
