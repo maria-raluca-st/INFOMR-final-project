@@ -1,7 +1,15 @@
-from vedo import Plotter, Mesh, dataurl,Line, Box
+from vedo import Plotter, Mesh, dataurl, Line, Box
 import numpy as np
 import crossfiledialog
-from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape
+from normalize import (
+    normalize_pose,
+    normalize_position,
+    normalize_vertices,
+    normalize_scale,
+    normalize_flip,
+    normalize_shape,
+)
+
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
 import datetime
@@ -9,7 +17,7 @@ import datetime
 
 class MeshViewer:
     def __init__(self, file=None):
-        
+
         self.hidden = False
         self.lines = False
 
@@ -19,19 +27,17 @@ class MeshViewer:
             self.mesh = Mesh(file).c("violet").flat()
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
 
-        #Help Display 
-        self.z_axis = Line([0,0,0], [0,0,2], lw=3).c("Blue")
-        self.y_axis = Line([0,0,0], [0,2,0], lw=3).c("Green")
-        self.x_axis = Line([0,0,0], [2,0,0], lw=3).c("Red")
-        self.unit_box = Box(width=1,height=1,length=1).c("Black").wireframe(True)
+        # Help Display
+        self.z_axis = Line([0, 0, 0], [0, 0, 2], lw=3).c("Blue")
+        self.y_axis = Line([0, 0, 0], [0, 2, 0], lw=3).c("Green")
+        self.x_axis = Line([0, 0, 0], [2, 0, 0], lw=3).c("Red")
+        self.unit_box = Box(width=1, height=1, length=1).c("Black").wireframe(True)
         self.origMesh = self.mesh.copy().c("Black").wireframe(True)
 
         self.show()
 
-        
-    
     def show(self):
-        
+
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
 
@@ -48,22 +54,22 @@ class MeshViewer:
                 self.mesh = Mesh(file).c("violet").flat()
                 self.origMesh = self.mesh.copy().c("black").wireframe(True)
                 self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
-                self.plt.add(self.mesh,self.origMesh)
+                self.plt.add(self.mesh, self.origMesh)
             except:
                 print("Unable to add mesh from file", file)
 
     def switchView(self, obj, ename):
         status = self.view_btn.status()
         if status == "click to hide":
-            self.hidden=True
-            if(self.lines):
+            self.hidden = True
+            if self.lines:
                 self.mesh.wireframe(True)
             else:
                 self.mesh.alpha(0)
-            
+
         elif status == "flat shading":
             self.mesh.flat()
-            self.hidden=False
+            self.hidden = False
             self.mesh.wireframe(False)
             self.mesh.alpha(1)
             self.mesh.c("violet")
@@ -77,22 +83,21 @@ class MeshViewer:
             self.mesh.cellcolors = self.rgba
 
         self.view_btn.switch()
-    
+
     def triggerMesh(self, obj, ename):
-        if(self.mesh_btn.status()=="show edges"):
+        if self.mesh_btn.status() == "show edges":
             self.mesh.alpha(1)
-            self.lines=True
-            if(self.hidden):
+            self.lines = True
+            if self.hidden:
                 self.mesh.wireframe(True)
             self.mesh.linewidth(1)
         else:
-            if(self.hidden):
+            if self.hidden:
                 self.mesh.alpha(0)
             self.lines = False
             self.mesh.wireframe(False)
             self.mesh.linewidth(0)
         self.mesh_btn.switch()
-        
 
     def resetCamera(self, obj, ename):
         self.plt.reset_camera()
@@ -102,7 +107,7 @@ class MeshViewer:
         self.hideGui()
         self.plt.screenshot(f"image.png")
         self.buildGui()
-    
+
     def hideGui(self):
         self.plt.remove(self.view_btn)
         self.plt.remove(self.import_btn)
@@ -112,44 +117,40 @@ class MeshViewer:
         self.plt.remove(self.set_btn)
         self.plt.remove(self.screenshot_btn)
         self.plt.remove(self.orig_btn)
-    
-    def normalize(self,obj,ename):
+
+    def normalize(self, obj, ename):
         status = self.norm_btn.status()
-        if(status =="normalize position"):
+        if status == "normalize position":
             normalize_position(self.mesh)
-        elif(status =="normalize pose"):
+        elif status == "normalize pose":
             normalize_pose(self.mesh)
-        elif(status =="normalize vertices"):
+        elif status == "normalize vertices":
             normalize_vertices(self.mesh)
-        elif(status == "normalize orientation"):
+        elif status == "normalize orientation":
             normalize_flip(self.mesh)
-        elif(status == "normalize size"):
+        elif status == "normalize size":
             normalize_scale(self.mesh)
         self.norm_btn.switch()
 
-    def set_options(self,obj,ename):
+    def set_options(self, obj, ename):
         status = self.set_btn.status()
-        if(status =="show axis"):
-            self.plt.add(self.x_axis,self.y_axis,self.z_axis)
-        elif(status =="show unit box"):
+        if status == "show axis":
+            self.plt.add(self.x_axis, self.y_axis, self.z_axis)
+        elif status == "show unit box":
             self.plt.add(self.unit_box)
-        elif(status =="hide axis"):
-            self.plt.remove(self.x_axis,self.y_axis,self.z_axis)
-        elif(status == "hide unit box"):
+        elif status == "hide axis":
+            self.plt.remove(self.x_axis, self.y_axis, self.z_axis)
+        elif status == "hide unit box":
             self.plt.remove(self.unit_box)
         self.set_btn.switch()
 
-    def trigger_orig(self,obj,ename):
+    def trigger_orig(self, obj, ename):
         status = self.orig_btn.status()
-        if(status =="show original"):
+        if status == "show original":
             self.plt.add(self.origMesh)
-        elif(status =="hide original"):
+        elif status == "hide original":
             self.plt.remove(self.origMesh)
         self.orig_btn.switch()
-
-
-
-
 
     def buildGui(self):
 
@@ -163,8 +164,8 @@ class MeshViewer:
                 "smooth shading",
                 "random colors",
             ],  # text for each state
-            c=["w", "w", "w","w"],  # font color for each state
-            bc=["dv", "dv", "dv","dv"],  # background color for each state
+            c=["w", "w", "w", "w"],  # font color for each state
+            bc=["dv", "dv", "dv", "dv"],  # background color for each state
             font="courier",  # font type
             size=20,  # font size
             bold=False,  # bold font
@@ -211,7 +212,13 @@ class MeshViewer:
         self.norm_btn = self.plt.add_button(
             self.normalize,
             pos=(0.15, 0.75),
-            states=["normalize position","normalize pose","normalize vertices","normalize orientation","normalize size"],
+            states=[
+                "normalize vertices",
+                "normalize position",
+                "normalize pose",
+                "normalize orientation",
+                "normalize size",
+            ],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -222,7 +229,7 @@ class MeshViewer:
         self.set_btn = self.plt.add_button(
             self.set_options,
             pos=(0.15, 0.70),
-            states=["show axis","show unit box","hide axis","hide unit box"],
+            states=["show axis", "show unit box", "hide axis", "hide unit box"],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -233,7 +240,7 @@ class MeshViewer:
         self.orig_btn = self.plt.add_button(
             self.trigger_orig,
             pos=(0.15, 0.65),
-            states=["show original","hide original"],
+            states=["show original", "hide original"],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -241,7 +248,6 @@ class MeshViewer:
             bold=False,
             italic=False,
         )
-
 
         self.screenshot_btn = self.plt.add_button(
             self.screenshotPlot,
@@ -258,5 +264,9 @@ class MeshViewer:
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    file = "../shapes\Door\D01104.obj"
+    file = "../shapes/Door/D01104.obj"
+    file = "../shapes/PlantIndoors/D00159.obj"  # Largest number of vertices
+    # file = "../shapes/Door/D01121.obj"    # Smallest number of vertices
+    # file = "../shapes/Door/m1708.obj"  # Smallest number of vertices
+
     mv = MeshViewer(file=file)
