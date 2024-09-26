@@ -1,7 +1,7 @@
-from vedo import Plotter, Mesh, dataurl,Line, Box
+from vedo import Plotter, Mesh, dataurl,Line, Box, Sphere, LinearTransform
 import numpy as np
 import crossfiledialog
-from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape
+from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape, get_center_of_mass
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
 import datetime
@@ -18,7 +18,8 @@ class MeshViewer:
         else:
             self.mesh = Mesh(file).c("violet").flat()
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
-
+        com = get_center_of_mass(self.mesh)
+        self.ball = Sphere(pos=com, r=0.02, res=24, quads=False, c='red', alpha=1.0)
         #Help Display 
         self.z_axis = Line([0,0,0], [0,0,2], lw=3).c("Blue")
         self.y_axis = Line([0,0,0], [0,2,0], lw=3).c("Green")
@@ -36,7 +37,7 @@ class MeshViewer:
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
 
         self.buildGui()
-        self.plt.show(self.mesh, __doc__)
+        self.plt.show(self.mesh, self.ball,__doc__)
 
     def importObject(self, obj, ename):
         file = crossfiledialog.open_file()
@@ -45,10 +46,12 @@ class MeshViewer:
                 print(f"importing {file}")
                 self.plt.remove(self.mesh)
                 self.plt.remove(self.origMesh)
-                self.mesh = Mesh(file).c("violet").flat()
+                self.mesh = Mesh(file).c("violet").flat().alpha(0.5)
                 self.origMesh = self.mesh.copy().c("black").wireframe(True)
                 self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
                 self.plt.add(self.mesh,self.origMesh)
+                self.norm_btn.status("normalize position")
+                self.reset_com_ball()
             except:
                 print("Unable to add mesh from file", file)
 
@@ -65,7 +68,7 @@ class MeshViewer:
             self.mesh.flat()
             self.hidden=False
             self.mesh.wireframe(False)
-            self.mesh.alpha(1)
+            self.mesh.alpha(0.5)
             self.mesh.c("violet")
 
         elif status == "smooth shading":
@@ -113,6 +116,14 @@ class MeshViewer:
         self.plt.remove(self.screenshot_btn)
         self.plt.remove(self.orig_btn)
     
+    def reset_com_ball(self):
+        npos = get_center_of_mass(self.mesh)
+        print(npos)
+        LT = LinearTransform()
+        LT.translate(-self.ball.transform.position+npos)
+        LT.move(self.ball)
+        print(self.ball)
+
     def normalize(self,obj,ename):
         status = self.norm_btn.status()
         if(status =="normalize position"):
@@ -125,6 +136,7 @@ class MeshViewer:
             normalize_flip(self.mesh)
         elif(status == "normalize size"):
             normalize_scale(self.mesh)
+        self.reset_com_ball()
         self.norm_btn.switch()
 
     def set_options(self,obj,ename):
@@ -255,8 +267,16 @@ class MeshViewer:
             italic=False,
         )
 
+"""
+Example Files 
+Off Center Door: D01104
+Off Center Lamp: m619
+Off Center Guitar\D00534.obj
+
+"""
+
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    file = "../shapes\Door\D01104.obj"
+    file = "../shapes\FloorLamp\m619.obj"
     mv = MeshViewer(file=file)

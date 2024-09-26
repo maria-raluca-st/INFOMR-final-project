@@ -37,7 +37,24 @@ def get_eigenvectors(mesh:Mesh):
     eigenvalues, eigenvectors = np.linalg.eig(A_cov)
     return eigenvectors, eigenvalues
 
-    
+
+
+def get_center_of_mass(mesh:Mesh):
+    #Naive COmputation: np.mean(mesh.vertices,axis=0)
+    #return mesh.center_of_mass()
+    #Bary Center is the mean of the triangle centers weighed by their area
+    meshVolume = 0
+    temp = (0,0,0)
+
+    for i1,i2,i3 in mesh.cells:
+        v1,v2,v3 = mesh.vertices[i1],mesh.vertices[i2],mesh.vertices[i3]
+        center = (v1 + v2 + v3) / 4          #center of tetrahedron
+        volume = np.dot(v1, np.cross(v2, v3)) / 6  #signed volume of tetrahedron
+        meshVolume += volume
+        temp += center * volume
+
+    meshCenter = temp / meshVolume
+    return meshCenter
 
 def normalize_position(mesh:Mesh,inplace=True):
     """
@@ -52,9 +69,14 @@ def normalize_position(mesh:Mesh,inplace=True):
         wMesh=mesh.copy()
     else:
         wMesh=mesh
-    LT = LinearTransform()
-    LT.translate(wMesh.transform.position-wMesh.center_of_mass())
-    LT.move(wMesh)
+    com = get_center_of_mass(wMesh)
+    #print("Com Pre", com)
+    wMesh.vertices-=com
+    #LT = LinearTransform()
+    #LT.translate(wMesh.transform.position-com)
+    #LT.move(wMesh)
+    #com2 = get_center_of_mass(wMesh)
+    #print("Com Post", com2)
     return wMesh
 
 def normalize_pose(mesh:Mesh,inplace=True):
@@ -72,11 +94,20 @@ def normalize_pose(mesh:Mesh,inplace=True):
         wMesh=mesh
     eigenvectors,eigenvalues = get_eigenvectors(wMesh)
     ranking = np.argpartition(eigenvalues, 2)
+    com = get_center_of_mass(mesh)
     aligned_matrix = [eigenvectors[ranking[2]],
                       eigenvectors[ranking[1]],
-                      eigenvectors[ranking[0]]]
-    wMesh.vertices = np.dot(wMesh.vertices,np.transpose(aligned_matrix))
-
+                      np.cross(eigenvectors[ranking[2]],eigenvectors[ranking[1]])]
+    wMesh.vertices = np.dot(wMesh.vertices-com,np.transpose(aligned_matrix)) #Simple Crossproduct
+    return wMesh
+    nverts = [] #Manual Method
+    for v in wMesh.vertices:
+        xpos = np.dot(v,eigenvectors[ranking[2]])
+        ypos = np.dot(v,eigenvectors[ranking[1]])
+        zpos = v - np.cross(v,eigenvectors[ranking[0]])
+        nverts.append([xpos,ypos,zpos])
+    wMesh.vertices = nverts
+    return wMesh
 def normalize_vertices(mesh:Mesh):
     """
     Redistributes vertices so that they are within a target range and more uniformly distributed across the object. 
