@@ -9,7 +9,7 @@ import datetime
 
 class MeshViewer:
     def __init__(self, file=None):
-        
+
         self.hidden = False
         self.lines = False
 
@@ -29,10 +29,8 @@ class MeshViewer:
 
         self.show()
 
-        
-    
     def show(self):
-        
+
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
 
@@ -58,15 +56,15 @@ class MeshViewer:
     def switchView(self, obj, ename):
         status = self.view_btn.status()
         if status == "click to hide":
-            self.hidden=True
-            if(self.lines):
+            self.hidden = True
+            if self.lines:
                 self.mesh.wireframe(True)
             else:
                 self.mesh.alpha(0)
-            
+
         elif status == "flat shading":
             self.mesh.flat()
-            self.hidden=False
+            self.hidden = False
             self.mesh.wireframe(False)
             self.mesh.alpha(0.5)
             self.mesh.c("violet")
@@ -80,22 +78,21 @@ class MeshViewer:
             self.mesh.cellcolors = self.rgba
 
         self.view_btn.switch()
-    
+
     def triggerMesh(self, obj, ename):
-        if(self.mesh_btn.status()=="show edges"):
+        if self.mesh_btn.status() == "show edges":
             self.mesh.alpha(1)
-            self.lines=True
-            if(self.hidden):
+            self.lines = True
+            if self.hidden:
                 self.mesh.wireframe(True)
             self.mesh.linewidth(1)
         else:
-            if(self.hidden):
+            if self.hidden:
                 self.mesh.alpha(0)
             self.lines = False
             self.mesh.wireframe(False)
             self.mesh.linewidth(0)
         self.mesh_btn.switch()
-        
 
     def resetCamera(self, obj, ename):
         self.plt.reset_camera()
@@ -105,7 +102,7 @@ class MeshViewer:
         self.hideGui()
         self.plt.screenshot(f"image.png")
         self.buildGui()
-    
+
     def hideGui(self):
         self.plt.remove(self.view_btn)
         self.plt.remove(self.import_btn)
@@ -126,42 +123,38 @@ class MeshViewer:
 
     def normalize(self,obj,ename):
         status = self.norm_btn.status()
-        if(status =="normalize position"):
+        if status == "normalize position":
             normalize_position(self.mesh)
-        elif(status =="normalize pose"):
+        elif status == "normalize pose":
             normalize_pose(self.mesh)
-        elif(status =="normalize vertices"):
+        elif status == "normalize vertices":
             normalize_vertices(self.mesh)
-        elif(status == "normalize orientation"):
+        elif status == "normalize orientation":
             normalize_flip(self.mesh)
-        elif(status == "normalize size"):
+        elif status == "normalize size":
             normalize_scale(self.mesh)
         self.reset_com_ball()
         self.norm_btn.switch()
 
-    def set_options(self,obj,ename):
+    def set_options(self, obj, ename):
         status = self.set_btn.status()
-        if(status =="show axis"):
-            self.plt.add(self.x_axis,self.y_axis,self.z_axis)
-        elif(status =="show unit box"):
+        if status == "show axis":
+            self.plt.add(self.x_axis, self.y_axis, self.z_axis)
+        elif status == "show unit box":
             self.plt.add(self.unit_box)
-        elif(status =="hide axis"):
-            self.plt.remove(self.x_axis,self.y_axis,self.z_axis)
-        elif(status == "hide unit box"):
+        elif status == "hide axis":
+            self.plt.remove(self.x_axis, self.y_axis, self.z_axis)
+        elif status == "hide unit box":
             self.plt.remove(self.unit_box)
         self.set_btn.switch()
 
-    def trigger_orig(self,obj,ename):
+    def trigger_orig(self, obj, ename):
         status = self.orig_btn.status()
-        if(status =="show original"):
+        if status == "show original":
             self.plt.add(self.origMesh)
-        elif(status =="hide original"):
+        elif status == "hide original":
             self.plt.remove(self.origMesh)
         self.orig_btn.switch()
-
-
-
-
 
     def buildGui(self):
 
@@ -175,8 +168,8 @@ class MeshViewer:
                 "smooth shading",
                 "random colors",
             ],  # text for each state
-            c=["w", "w", "w","w"],  # font color for each state
-            bc=["dv", "dv", "dv","dv"],  # background color for each state
+            c=["w", "w", "w", "w"],  # font color for each state
+            bc=["dv", "dv", "dv", "dv"],  # background color for each state
             font="courier",  # font type
             size=20,  # font size
             bold=False,  # bold font
@@ -223,7 +216,13 @@ class MeshViewer:
         self.norm_btn = self.plt.add_button(
             self.normalize,
             pos=(0.15, 0.75),
-            states=["normalize position","normalize pose","normalize vertices","normalize orientation","normalize size"],
+            states=[
+                "normalize vertices",
+                "normalize position",
+                "normalize pose",
+                "normalize orientation",
+                "normalize size",
+            ],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -234,7 +233,7 @@ class MeshViewer:
         self.set_btn = self.plt.add_button(
             self.set_options,
             pos=(0.15, 0.70),
-            states=["show axis","show unit box","hide axis","hide unit box"],
+            states=["show axis", "show unit box", "hide axis", "hide unit box"],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -245,7 +244,7 @@ class MeshViewer:
         self.orig_btn = self.plt.add_button(
             self.trigger_orig,
             pos=(0.15, 0.65),
-            states=["show original","hide original"],
+            states=["show original", "hide original"],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -253,7 +252,6 @@ class MeshViewer:
             bold=False,
             italic=False,
         )
-
 
         self.screenshot_btn = self.plt.add_button(
             self.screenshotPlot,
@@ -278,5 +276,5 @@ Off Center Guitar\D00534.obj
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    file = "../shapes\PlantIndoors\D00159.obj"
+    file = "../shapes\Door\D01104.obj"
     mv = MeshViewer(file=file)
