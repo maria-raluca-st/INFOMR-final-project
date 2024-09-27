@@ -111,7 +111,8 @@ def normalize_pose(mesh: Mesh, inplace=True):
         nverts.append([xpos,ypos,zpos])
     wMesh.vertices = nverts
     return wMesh
-def normalize_vertices(mesh:Mesh):
+
+def normalize_vertices(mesh:Mesh, target_vertices = 5000):
     """
     Redistributes vertices so that they are within a target range and more uniformly distributed across the object.
     ----------------------------
@@ -120,31 +121,88 @@ def normalize_vertices(mesh:Mesh):
     Returns:
         Vedo Mesh with vertices redistributed
     """
-    while mesh.nvertices < 100:
-        mesh.subdivide(n=1, method=2)
-    while mesh.nvertices > 50_000:
-        mesh.decimate(n=50_000)
+    # while mesh.nvertices < 100:
+    #     mesh.subdivide(n=1, method=2)
+    # while mesh.nvertices > 50_000:
+    #     mesh.decimate(n=50_000)
+        
+    current_nverts = mesh.npoints # current number of vertices
+
+    # super sampling
+    if current_nverts < target_vertices:
+        while current_nverts < target_vertices:
+            mesh.subdivide(method=2)
+            current_nverts = mesh.npoints  # vertex count++
+    
+    # subsampling
+    elif current_nverts > target_vertices:
+        reduction_factor = target_vertices / current_nverts
+        mesh.decimate(fraction=reduction_factor) # vertex count --
+
+    return mesh
+
 
 
 def normalize_flip(mesh: Mesh):
     """
-    Rotates mesh so that "heaviest" side is within one quadrant, ensuring similar orientation
+    Flips the mesh so that the majority of the shape's mass is in the positive half of each axis (x, y, z).
+    If the mass is mostly in the negative half, mirror the mesh along that axis.
     ----------------------------
     Input:
         Vedo Mesh
     Returns:
-        Vedo Mesh flipped
+        Vedo Mesh flipped along necessary axes
     """
+
+    # Init flipping test values for x, y, z
+    f = [0.0, 0.0, 0.0]
+    
+
+    for i1, i2, i3 in mesh.faces():  # loop over list of triangles (indices of vertices)
+    
+        v1, v2, v3 = mesh.points()[i1], mesh.points()[i2], mesh.points()[i3] # vertices
+        Ct = (v1 + v2 + v3) / 3.0 # center of triangle
+        
+      
+        for i in range(3): # loop over x, y, z
+            f[i] += np.sign(Ct[i]) * (Ct[i] ** 2)
+
+    flip_signs = [np.sign(f[0]), np.sign(f[1]), np.sign(f[2])]
+    scale_factors = [flip_signs[0], flip_signs[1], flip_signs[2]]
+    
+    mesh.scale(scale_factors) # flip mesh if necessary
+    
     return mesh
+
 
 
 def normalize_scale(mesh: Mesh):
     """
-    Resizes mesh so that its largest axis has a size of one
+    Resizes mesh so that its largest axis has a size of one.
     ----------------------------
     Input:
         Vedo Mesh
     Returns:
         Vedo Mesh with size normalized
     """
+
+    bbox_min, bbox_max = mesh.bounds()[:3], mesh.bounds()[3:]  # bounding box of mesh
+    
+    Dx = bbox_max[0] - bbox_min[0]  
+    Dy = bbox_max[1] - bbox_min[1]  
+    Dz = bbox_max[2] - bbox_min[2]  
+    
+    Dmax = max(Dx, Dy, Dz) #   # largest dimension of bounding box
+    
+    s = 1 / Dmax # scaling factor
+    
+    mesh.scale(s) # resizing mesh
+    
     return mesh
+
+
+
+
+
+normalize_shape(Mesh("/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"))
+
