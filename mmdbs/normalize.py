@@ -40,23 +40,23 @@ def get_eigenvectors(mesh: Mesh):
     return eigenvectors, eigenvalues
 
 
-
-def get_center_of_mass(mesh:Mesh):
-    #Naive COmputation: np.mean(mesh.vertices,axis=0)
-    #return mesh.center_of_mass()
-    #Bary Center is the mean of the triangle centers weighed by their area
+def get_center_of_mass(mesh: Mesh):
+    # Naive COmputation: np.mean(mesh.vertices,axis=0)
+    # return mesh.center_of_mass()
+    # Bary Center is the mean of the triangle centers weighed by their area
     meshVolume = 0
-    temp = (0,0,0)
+    temp = (0, 0, 0)
 
-    for i1,i2,i3 in mesh.cells:
-        v1,v2,v3 = mesh.vertices[i1],mesh.vertices[i2],mesh.vertices[i3]
-        center = (v1 + v2 + v3) / 4          #center of tetrahedron
-        volume = np.dot(v1, np.cross(v2, v3)) / 6  #signed volume of tetrahedron
+    for i1, i2, i3 in mesh.cells:
+        v1, v2, v3 = mesh.vertices[i1], mesh.vertices[i2], mesh.vertices[i3]
+        center = (v1 + v2 + v3) / 4  # center of tetrahedron
+        volume = np.dot(v1, np.cross(v2, v3)) / 6  # signed volume of tetrahedron
         meshVolume += volume
         temp += center * volume
 
     meshCenter = temp / meshVolume
     return meshCenter
+
 
 def normalize_position(mesh: Mesh, inplace=True):
     """
@@ -70,15 +70,15 @@ def normalize_position(mesh: Mesh, inplace=True):
     if not inplace:
         wMesh = mesh.copy()
     else:
-        wMesh=mesh
+        wMesh = mesh
     com = get_center_of_mass(wMesh)
-    #print("Com Pre", com)
-    wMesh.vertices-=com
-    #LT = LinearTransform()
-    #LT.translate(wMesh.transform.position-com)
-    #LT.move(wMesh)
-    #com2 = get_center_of_mass(wMesh)
-    #print("Com Post", com2)
+    # print("Com Pre", com)
+    wMesh.vertices -= com
+    # LT = LinearTransform()
+    # LT.translate(wMesh.transform.position-com)
+    # LT.move(wMesh)
+    # com2 = get_center_of_mass(wMesh)
+    # print("Com Post", com2)
     return wMesh
 
 
@@ -98,21 +98,26 @@ def normalize_pose(mesh: Mesh, inplace=True):
     eigenvectors, eigenvalues = get_eigenvectors(wMesh)
     ranking = np.argpartition(eigenvalues, 2)
     com = get_center_of_mass(mesh)
-    aligned_matrix = [eigenvectors[ranking[2]],
-                      eigenvectors[ranking[1]],
-                      np.cross(eigenvectors[ranking[2]],eigenvectors[ranking[1]])]
-    wMesh.vertices = np.dot(wMesh.vertices-com,np.transpose(aligned_matrix)) #Simple Crossproduct
+    aligned_matrix = [
+        eigenvectors[ranking[2]],
+        eigenvectors[ranking[1]],
+        np.cross(eigenvectors[ranking[2]], eigenvectors[ranking[1]]),
+    ]
+    wMesh.vertices = np.dot(
+        wMesh.vertices - com, np.transpose(aligned_matrix)
+    )  # Simple Crossproduct
     return wMesh
-    nverts = [] #Manual Method
+    nverts = []  # Manual Method
     for v in wMesh.vertices:
-        xpos = np.dot(v,eigenvectors[ranking[2]])
-        ypos = np.dot(v,eigenvectors[ranking[1]])
-        zpos = v - np.cross(v,eigenvectors[ranking[0]])
-        nverts.append([xpos,ypos,zpos])
+        xpos = np.dot(v, eigenvectors[ranking[2]])
+        ypos = np.dot(v, eigenvectors[ranking[1]])
+        zpos = v - np.cross(v, eigenvectors[ranking[0]])
+        nverts.append([xpos, ypos, zpos])
     wMesh.vertices = nverts
     return wMesh
 
-def normalize_vertices(mesh:Mesh, target_vertices = 5000):
+
+def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_reduction=0.7):
     """
     Redistributes vertices so that they are within a target range and more uniformly distributed across the object.
     ----------------------------
@@ -125,19 +130,30 @@ def normalize_vertices(mesh:Mesh, target_vertices = 5000):
     #     mesh.subdivide(n=1, method=2)
     # while mesh.nvertices > 50_000:
     #     mesh.decimate(n=50_000)
-        
-    current_nverts = mesh.npoints # current number of vertices
 
-    # super sampling
-    if current_nverts < target_vertices:
-        while current_nverts < target_vertices:
-            mesh.subdivide(method=2)
-            current_nverts = mesh.npoints  # vertex count++
-    
-    # subsampling
-    elif current_nverts > target_vertices:
-        reduction_factor = target_vertices / current_nverts
-        mesh.decimate(fraction=reduction_factor) # vertex count --
+    # current_nverts = mesh.npoints # current number of vertices
+
+    # # super sampling
+    # if current_nverts < target_vertices:
+    #     while current_nverts < target_vertices:
+    #         mesh.subdivide(method=2)
+    #         current_nverts = mesh.npoints  # vertex count++
+
+    # # subsampling
+    # elif current_nverts > target_vertices:
+    #     reduction_factor = target_vertices / current_nverts
+    #     mesh.decimate(fraction=reduction_factor) # vertex count --
+
+    _min, _max = target_range
+
+    while not (_max >= mesh.nvertices >= _min):
+        if mesh.nvertices > _max:
+            reduction_factor = _max / mesh.nvertices
+            mesh.decimate(
+                fraction=max(max_reduction, reduction_factor)
+            )  # Slow reduction should be better
+        else:
+            mesh.subdivide(n=1, method=2)  # Slow/adaptive should be better. Segfaults on some shapes.
 
     return mesh
 
@@ -156,24 +172,21 @@ def normalize_flip(mesh: Mesh):
 
     # Init flipping test values for x, y, z
     f = [0.0, 0.0, 0.0]
-    
 
     for i1, i2, i3 in mesh.faces():  # loop over list of triangles (indices of vertices)
-    
-        v1, v2, v3 = mesh.points()[i1], mesh.points()[i2], mesh.points()[i3] # vertices
-        Ct = (v1 + v2 + v3) / 3.0 # center of triangle
-        
-      
-        for i in range(3): # loop over x, y, z
+
+        v1, v2, v3 = mesh.points()[i1], mesh.points()[i2], mesh.points()[i3]  # vertices
+        Ct = (v1 + v2 + v3) / 3.0  # center of triangle
+
+        for i in range(3):  # loop over x, y, z
             f[i] += np.sign(Ct[i]) * (Ct[i] ** 2)
 
     flip_signs = [np.sign(f[0]), np.sign(f[1]), np.sign(f[2])]
     scale_factors = [flip_signs[0], flip_signs[1], flip_signs[2]]
-    
-    mesh.scale(scale_factors) # flip mesh if necessary
-    
-    return mesh
 
+    mesh.scale(scale_factors)  # flip mesh if necessary
+
+    return mesh
 
 
 def normalize_scale(mesh: Mesh):
@@ -187,22 +200,22 @@ def normalize_scale(mesh: Mesh):
     """
 
     bbox_min, bbox_max = mesh.bounds()[:3], mesh.bounds()[3:]  # bounding box of mesh
-    
-    Dx = bbox_max[0] - bbox_min[0]  
-    Dy = bbox_max[1] - bbox_min[1]  
-    Dz = bbox_max[2] - bbox_min[2]  
-    
-    Dmax = max(Dx, Dy, Dz) #   # largest dimension of bounding box
-    
-    s = 1 / Dmax # scaling factor
-    
-    mesh.scale(s) # resizing mesh
-    
+
+    Dx = bbox_max[0] - bbox_min[0]
+    Dy = bbox_max[1] - bbox_min[1]
+    Dz = bbox_max[2] - bbox_min[2]
+
+    Dmax = max(Dx, Dy, Dz)  #   # largest dimension of bounding box
+
+    s = 1 / Dmax  # scaling factor
+
+    mesh.scale(s)  # resizing mesh
+
     return mesh
 
 
-
-
-
-normalize_shape(Mesh("/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"))
-
+normalize_shape(
+    Mesh(
+        "/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"
+    )
+)
