@@ -1,10 +1,20 @@
 from vedo import Plotter, Mesh, dataurl,Line, Box, Sphere, LinearTransform
 import numpy as np
-import crossfiledialog
 from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape, get_center_of_mass
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
 import datetime
+from PyQt5.QtWidgets import QApplication, QFileDialog  
+import sys
+
+
+def file_dialog():
+    try:
+        import crossfiledialog
+        return crossfiledialog.open_file()
+    except:
+        app = QApplication(sys.argv)  
+        return QFileDialog.getOpenFileName(None, "Open 3D Model", "", "3D Files (*.obj *.stl *.ply *.vtk)")
 
 
 class MeshViewer:
@@ -38,7 +48,8 @@ class MeshViewer:
         self.plt.show(self.mesh, self.ball,__doc__)
 
     def importObject(self, obj, ename):
-        file = crossfiledialog.open_file()
+        # file = crossfiledialog.open_file()
+        file, _ = file_dialog()
         if file is not None:
             try:
                 print(f"importing {file}")
@@ -275,6 +286,6 @@ Off Center Guitar\D00534.obj
 
 
 if __name__ == "__main__":
-    print("Starting Mesh View")
-    file = "../shapes\Door\D01104.obj"
+    # print("Starting Mesh View")
+    file = "/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"
     mv = MeshViewer(file=file)
