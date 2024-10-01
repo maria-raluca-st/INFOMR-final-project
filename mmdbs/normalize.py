@@ -117,45 +117,28 @@ def normalize_pose(mesh: Mesh, inplace=True):
     return wMesh
 
 
-def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_reduction=0.7):
+def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, max_iters=10):
     """
     Redistributes vertices so that they are within a target range and more uniformly distributed across the object.
     ----------------------------
     Input:
         Vedo Mesh
+        target_range: tuple with inclusive minimum and maximum number of verts
+        max_fraction: Maximum fraction of vertices leftover after decimation. Should ensure slower, gradual decimation.
+        max_iters: Max number of decimation/subdivision steps.
     Returns:
         Vedo Mesh with vertices redistributed
     """
-    # while mesh.nvertices < 100:
-    #     mesh.subdivide(n=1, method=2)
-    # while mesh.nvertices > 50_000:
-    #     mesh.decimate(n=50_000)
-
-    # current_nverts = mesh.npoints # current number of vertices
-
-    # # super sampling
-    # if current_nverts < target_vertices:
-    #     while current_nverts < target_vertices:
-    #         mesh.subdivide(method=2)
-    #         current_nverts = mesh.npoints  # vertex count++
-
-    # # subsampling
-    # elif current_nverts > target_vertices:
-    #     reduction_factor = target_vertices / current_nverts
-    #     mesh.decimate(fraction=reduction_factor) # vertex count --
-
     _min, _max = target_range
-
-    while not (_max >= mesh.nvertices >= _min):
+    i = 0
+    while not (_max >= mesh.nvertices >= _min) and (i := i+1) < max_iters:
         if mesh.nvertices > _max:
             reduction_factor = _max / mesh.nvertices
             mesh.decimate(
-                fraction=max(max_reduction, reduction_factor)
+                fraction=max(max_fraction, reduction_factor)
             )  # Slow reduction should be better
         else:
-            mesh.subdivide(n=1, method=2)  # Slow/adaptive should be better. Segfaults on some shapes.
-
-    return mesh
+            mesh.subdivide(method=2)  # Slow/adaptive should be better
 
 
 
