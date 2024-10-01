@@ -4,7 +4,7 @@ from normalize import normalize_pose,normalize_position,normalize_vertices,norma
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
 import datetime
-from PyQt5.QtWidgets import QApplication, QFileDialog  
+#from PyQt5.QtWidgets import QApplication, QFileDialog  
 import sys
 
 
@@ -49,7 +49,7 @@ class MeshViewer:
 
     def importObject(self, obj, ename):
         # file = crossfiledialog.open_file()
-        file, _ = file_dialog()
+        file = file_dialog()
         if file is not None:
             try:
                 print(f"importing {file}")
@@ -126,13 +126,12 @@ class MeshViewer:
     
     def reset_com_ball(self):
         npos = get_center_of_mass(self.mesh)
-        print(npos)
         LT = LinearTransform()
         LT.translate(-self.ball.transform.position+npos)
         LT.move(self.ball)
-        print(self.ball)
 
     def normalize(self,obj,ename):
+        print(self.mesh)
         status = self.norm_btn.status()
         if status == "normalize position":
             normalize_position(self.mesh)
@@ -286,6 +285,6 @@ Off Center Guitar\D00534.obj
 
 
 if __name__ == "__main__":
-    # print("Starting Mesh View")
-    file = "/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"
+    print("Starting Mesh View")
+    file = "../shapes/FloorLamp/m619.obj"
     mv = MeshViewer(file=file)
