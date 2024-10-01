@@ -211,9 +211,10 @@ def normalize_scale(mesh: Mesh):
 
     return mesh
 
-
-normalize_shape(
-    Mesh(
-        "/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"
+if __name__ == "__main__":
+    #TODO: I assume this shouldn't be here 
+    normalize_shape(
+        Mesh(
+            "/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"
+        )
     )
-)
