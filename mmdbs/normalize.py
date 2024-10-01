@@ -15,9 +15,9 @@ def normalize_shape(mesh: Mesh, inplace=True):
         wMesh = mesh.copy()
     else:
         wMesh = mesh
+    normalize_vertices(wMesh)
     normalize_position(wMesh)
     normalize_pose(wMesh)
-    normalize_vertices(wMesh)
     normalize_flip(wMesh)
     normalize_scale(wMesh)
     return wMesh
@@ -37,13 +37,15 @@ def get_eigenvectors(mesh: Mesh):
     # covariance matrix. See documentation at
     # https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.eig.html
     eigenvalues, eigenvectors = np.linalg.eig(A_cov)
+    print(eigenvectors,eigenvalues)
     return eigenvectors, eigenvalues
 
 
-def get_center_of_mass(mesh: Mesh):
-    # Naive COmputation: np.mean(mesh.vertices,axis=0)
-    # return mesh.center_of_mass()
-    # Bary Center is the mean of the triangle centers weighed by their area
+
+def get_center_of_mass(mesh:Mesh):
+    #Naive COmputation: np.mean(mesh.vertices,axis=0)
+    return mesh.center_of_mass()
+    #Bary Center is the mean of the triangle centers weighed by their area
     meshVolume = 0
     temp = (0, 0, 0)
 
@@ -156,12 +158,13 @@ def normalize_flip(mesh: Mesh):
     # Init flipping test values for x, y, z
     f = [0.0, 0.0, 0.0]
 
-    for i1, i2, i3 in mesh.faces():  # loop over list of triangles (indices of vertices)
-
-        v1, v2, v3 = mesh.points()[i1], mesh.points()[i2], mesh.points()[i3]  # vertices
-        Ct = (v1 + v2 + v3) / 3.0  # center of triangle
-
-        for i in range(3):  # loop over x, y, z
+    for i1, i2, i3 in mesh.cells:  # loop over list of triangles (indices of vertices)
+    
+        v1, v2, v3 = mesh.vertices[i1], mesh.vertices[i2], mesh.vertices[i3] # vertices
+        Ct = (v1 + v2 + v3) / 3.0 # center of triangle
+        
+      
+        for i in range(3): # loop over x, y, z
             f[i] += np.sign(Ct[i]) * (Ct[i] ** 2)
 
     flip_signs = [np.sign(f[0]), np.sign(f[1]), np.sign(f[2])]
@@ -183,6 +186,18 @@ def normalize_scale(mesh: Mesh):
     """
 
     bbox_min, bbox_max = mesh.bounds()[:3], mesh.bounds()[3:]  # bounding box of mesh
+    
+    Dx = np.abs(bbox_max[0] - bbox_min[0])  
+    Dy = np.abs(bbox_max[1] - bbox_min[1])  
+    Dz = np.abs(bbox_max[2] - bbox_min[2])  
+    
+    Dmax = max(Dx, Dy, Dz) #   # largest dimension of bounding box
+    
+    s = 1 / Dmax # scaling factor
+    
+    mesh.scale(s) # resizing mesh
+    
+    return mesh
 
     Dx = bbox_max[0] - bbox_min[0]
     Dy = bbox_max[1] - bbox_min[1]
