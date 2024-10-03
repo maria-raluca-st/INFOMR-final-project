@@ -37,7 +37,7 @@ def get_eigenvectors(mesh: Mesh):
     # covariance matrix. See documentation at
     # https://docs.scipy.org/doc/numpy/reference/generated/numpy.linalg.eig.html
     eigenvalues, eigenvectors = np.linalg.eig(A_cov)
-    print(eigenvectors,eigenvalues)
+    # print(eigenvectors,eigenvalues) TODO: remove?
     return eigenvectors, eigenvalues
 
 
@@ -127,7 +127,7 @@ def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, 
         Vedo Mesh
         target_range: tuple with inclusive minimum and maximum number of verts
         max_fraction: Maximum fraction of vertices leftover after decimation. Should ensure slower, gradual decimation.
-        max_iters: Max number of decimation/subdivision steps.
+        max_iters: Max number of decimation/subdivision steps to avoid unlimited looping.
     Returns:
         Vedo Mesh with vertices redistributed
     """
