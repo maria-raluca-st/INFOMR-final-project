@@ -183,32 +183,22 @@ def normalize_scale(mesh: Mesh):
         Vedo Mesh
     Returns:
         Vedo Mesh with size normalized
+
+        [xmin,xmax, ymin,ymax, zmin,zmax]
     """
 
-    bbox_min, bbox_max = mesh.bounds()[:3], mesh.bounds()[3:]  # bounding box of mesh
+    bbox = mesh.bounds()
     
-    Dx = np.abs(bbox_max[0] - bbox_min[0])  
-    Dy = np.abs(bbox_max[1] - bbox_min[1])  
-    Dz = np.abs(bbox_max[2] - bbox_min[2])  
+    Dx = np.abs(bbox[0] - bbox[1])  
+    Dy = np.abs(bbox[2] - bbox[3])  
+    Dz = np.abs(bbox[4] - bbox[5])  
     
     Dmax = max(Dx, Dy, Dz) #   # largest dimension of bounding box
     
     s = 1 / Dmax # scaling factor
-    
+
     mesh.scale(s) # resizing mesh
     
-    return mesh
-
-    Dx = bbox_max[0] - bbox_min[0]
-    Dy = bbox_max[1] - bbox_min[1]
-    Dz = bbox_max[2] - bbox_min[2]
-
-    Dmax = max(Dx, Dy, Dz)  #   # largest dimension of bounding box
-
-    s = 1 / Dmax  # scaling factor
-
-    mesh.scale(s)  # resizing mesh
-
     return mesh
 
 if __name__ == "__main__":
