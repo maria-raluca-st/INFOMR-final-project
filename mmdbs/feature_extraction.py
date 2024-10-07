@@ -1,6 +1,6 @@
 from vedo import Mesh, Box, Sphere, ConvexHull
 import numpy as np
-
+from normalize import get_eigenvectors
 """
 Step 3.2: 3D shape descriptors
 Compute the following 3D elementary descriptors presented in Module 4: Feature extraction:
@@ -26,7 +26,8 @@ def extract_features(mesh:Mesh):
         "volume":mesh.volume(),
         "rectangularity":get_rectangularity(mesh),
         "compactness":get_compactness(mesh),
-        "convexity": get_convexity(mesh)
+        "convexity": get_convexity(mesh),
+        "eccentricity":get_eccentricity(mesh)
     }
     return ret
 
@@ -54,6 +55,13 @@ def get_convexity(mesh:Mesh):
     cvx = ConvexHull(mesh.vertices)
     convexity = mesh.volume()/cvx.volume()
     return convexity
+
+def get_eccentricity(mesh:Mesh):
+    #ratio of largest to smallest eigenvalues of covariance matrix
+    _,eigval = get_eigenvectors(mesh)
+    mineig = min(eigval)
+    maxeig = max(eigval)
+    return np.abs(maxeig)/np.abs(mineig)
 
 if __name__ == "__main__":
     boxMesh = Box(width=1,height=1,length=1).c("Black").wireframe(True) 
