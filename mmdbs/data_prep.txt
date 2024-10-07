@@ -1,0 +1,30 @@
+Mean of Distances (Original, Normalized): 40.236956179797765 - 1.2907188246851814e-10
+Median Distances (Original, Normalized): 0.5724530438793703 - 1.1291304655826957e-10
+Sum of Distances (Original, Normalized): 16658.099858436275 - 5.111246545753318e-08
+SD of Distances (Original, Normalized): 784.728813206298 - 1.1518496388469961e-10
+Max of Distances (Original, Normalized): 15987.017078567413 - 1.7730533835401165e-09 - ../shapes/Violin/D00598.obj - ../normshapes/RectangleTable/m917.obj
+
+Mean of Angles (Original, Normalized): 1.3167841775893516 - 0.5667432365701667
+Median Angles (Original, Normalized): 1.7312199625 - 0.0047667944999997824
+Sum of Angles (Original, Normalized): 545.1486495219916 - 224.43032168178598
+SD of Angles (Original, Normalized): 1.0611214986206978 - 0.974475635961534
+Max of Angles (Original, Normalized): 2.9999997408701966 - 2.9997230419224 - ../shapes/Cup/m500.obj, ../normshapes/Sword/m697.obj
+Max of Angles (Original, Normalized): 2.9999997408701966 - 2.9997230419224 - ../shapes/Cup/m500.obj, ../normshapes/Sword/m697.obj
+
+Mean of Sizes (Original, Normalized): 130.65471438963263 - 0.9999999983195454
+Median Sizes (Original, Normalized): 0.95 - 1.0
+SD of Sizes (Original, Normalized): 2584.9370656276565 - 4.702544810621799e-08
+Max of Sizes (Original, Normalized): 52661.5975398 - 1.00000012 - ../shapes/Violin/D00598.obj, ../normshapes/Chess/m1593.obj
+Min of Sizes (Original, Normalized): 0.18067299999999997 - 0.99999988 - ../shapes/TruckNonContainer/D00283.obj, ../normshapes/BuildingNonResidential/m383.
+
+Mean # of vertices (Original, Normalized): 5556.492753623188 - 7701.909090909091
+Median # of vertices (Original, Normalized): 1932.5 - 7998.0
+SD of #of vertices (Original, Normalized): 8863.686058828142 - 5185.3296274461545
+Max of # of vertices (Original, Normalized): 73697 - 81403 - ../shapes/Skyscraper/D00058.obj, ../normshapes/Shelf/D00781.obj
+Min of # of vertices (Original, Normalized): 18 - 1341 - ../shapes/Door/D01194.obj, ../normshapes/Spoon/D00157.obj
+
+Mean # of cells (Original, Normalized): 11537.91304347826 - 18036.14898989899
+Median # of cells (Original, Normalized): 4454.0 - 15536.0
+SD of #of cells (Original, Normalized): 16153.616104404526 - 13365.809780420634
+Max of # of cells (Original, Normalized): 119540 - 159202 - ../shapes/Car/m1556.obj, ../normshapes/Shelf/D00781.obj
+Min of # of cells (Original, Normalized): 18 - 2579 - ../shapes/Door/D01194.obj, ../normshapes/Apartment/D00496.obj

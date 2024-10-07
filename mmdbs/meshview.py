@@ -1,4 +1,4 @@
-from vedo import Plotter, Mesh, dataurl,Line, Box, Sphere, LinearTransform
+from vedo import Plotter, Mesh, dataurl,Line, Box, Sphere, LinearTransform, ConvexHull
 import numpy as np
 from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape, get_center_of_mass
 # Define a function that toggles the transparency of a mesh
@@ -18,12 +18,13 @@ def file_dialog():
 
 
 class MeshViewer:
-    def __init__(self, file=None):
+    def __init__(self, file=None, directMesh=None):
 
         self.hidden = False
         self.lines = False
-
-        if not file:  # Some default mesh from online
+        if directMesh != None:
+            self.mesh=directMesh 
+        elif not file:  # Some default mesh from online
             self.mesh = Mesh(dataurl + "magnolia.vtk").c("violet").flat()
         else:
             self.mesh = Mesh(file).c("violet").flat()
@@ -43,9 +44,9 @@ class MeshViewer:
 
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
-
+        self.convexHull = ConvexHull(self.mesh.vertices).c("Green").alpha(0.2)
         self.buildGui()
-        self.plt.show(self.mesh, self.ball,__doc__)
+        self.plt.show(self.mesh, self.convexHull, self.ball,__doc__)
 
     def importObject(self, obj, ename):
         # file = crossfiledialog.open_file()
@@ -280,11 +281,12 @@ Example Files
 Off Center Door: D01104
 Off Center Lamp: m619
 Off Center Guitar\D00534.obj
-
+FloorLamp/m619.obj
 """
 
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    file = "../shapes/FloorLamp/m619.obj"
-    mv = MeshViewer(file=file)
+    msphere=Sphere(r=1, res=24, quads=False, c='red', alpha=1.0)
+    file = "../shapes/train/D01014.obj"
+    mv = MeshViewer(file=file,directMesh=None)
