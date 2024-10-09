@@ -162,7 +162,6 @@ def normalize_flip(mesh: Mesh):
     
         v1, v2, v3 = mesh.vertices[i1], mesh.vertices[i2], mesh.vertices[i3] # vertices
         Ct = (v1 + v2 + v3) / 3.0 # center of triangle
-        
       
         for i in range(3): # loop over x, y, z
             f[i] += np.sign(Ct[i]) * (Ct[i] ** 2)
@@ -210,11 +209,3 @@ def normalize_scale(mesh: Mesh):
     mesh.scale(s)  # resizing mesh
 
     return mesh
-
-if __name__ == "__main__":
-    #TODO: I assume this shouldn't be here 
-    normalize_shape(
-        Mesh(
-            "/Users/ralucastanescu/Desktop/INFOMR/INFOMR-final-project/shapes/Bird/D00089.obj"
-        )
-    )
