@@ -1,6 +1,7 @@
 from vedo import Plotter, Mesh, dataurl,Line, Box, Sphere, LinearTransform, ConvexHull
 import numpy as np
 from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape, get_center_of_mass
+from feature_extraction import extract_features
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
 import datetime
@@ -18,7 +19,7 @@ def file_dialog():
 
 
 class MeshViewer:
-    def __init__(self, file=None, directMesh=None):
+    def __init__(self, file=None, directMesh=None,pts = None):
 
         self.hidden = False
         self.lines = False
@@ -35,10 +36,14 @@ class MeshViewer:
         self.z_axis = Line([0,0,0], [0,0,2], lw=3).c("Blue")
         self.y_axis = Line([0,0,0], [0,2,0], lw=3).c("Green")
         self.x_axis = Line([0,0,0], [2,0,0], lw=3).c("Red")
+        self.diagonal = Line(pts[0], pts[1], lw=10).c("Red")
+        
+
         self.unit_box = Box(width=1,height=1,length=1).c("Black").wireframe(True)
         self.origMesh = self.mesh.copy().c("Black").wireframe(True)
 
         self.show()
+        
 
     def show(self):
 
@@ -157,6 +162,10 @@ class MeshViewer:
             self.plt.remove(self.x_axis, self.y_axis, self.z_axis)
         elif status == "hide unit box":
             self.plt.remove(self.unit_box)
+        elif status == "show diagonal":
+            self.plt.add(self.diagonal)
+        elif status == "hide diagonal":
+            self.plt.remove(self.diagonal)
         self.set_btn.switch()
 
     def trigger_orig(self, obj, ename):
@@ -244,7 +253,7 @@ class MeshViewer:
         self.set_btn = self.plt.add_button(
             self.set_options,
             pos=(0.15, 0.70),
-            states=["show axis", "show unit box", "hide axis", "hide unit box"],
+            states=["show axis", "show unit box","show diagonal", "hide axis", "hide unit box","hide diagonal"],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -287,6 +296,10 @@ FloorLamp/m619.obj
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    msphere=Sphere(r=1, res=24, quads=False, c='red', alpha=1.0)
+    train = normalize_shape(Mesh("..\shapes\Train\D01014.obj"))
+
+    #head = normalize_shape(Mesh("..\shapes\HumanHead\D00131.obj"))
+    #insect = normalize_shape(Mesh("..\shapes\Insect\D00117.obj"))
+    diag = extract_features(train)["diameterPts"]
     file = "../shapes/train/D01014.obj"
-    mv = MeshViewer(file=file,directMesh=None)
+    mv = MeshViewer(file=file,directMesh=train,pts=diag)
