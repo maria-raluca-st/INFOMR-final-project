@@ -1,6 +1,7 @@
-from vedo import Plotter, Mesh, dataurl,Line, Box, Sphere, LinearTransform
+from vedo import Plotter, Mesh, dataurl,Line, Box, Sphere, LinearTransform, ConvexHull
 import numpy as np
 from normalize import normalize_pose,normalize_position,normalize_vertices,normalize_scale,normalize_flip,normalize_shape, get_center_of_mass
+from feature_extraction import extract_features
 # Define a function that toggles the transparency of a mesh
 #  and changes the button state
 import datetime
@@ -18,12 +19,13 @@ def file_dialog():
 
 
 class MeshViewer:
-    def __init__(self, file=None):
+    def __init__(self, file=None, directMesh=None,pts = None):
 
         self.hidden = False
         self.lines = False
-
-        if not file:  # Some default mesh from online
+        if directMesh != None:
+            self.mesh=directMesh 
+        elif not file:  # Some default mesh from online
             self.mesh = Mesh(dataurl + "magnolia.vtk").c("violet").flat()
         else:
             self.mesh = Mesh(file).c("violet").flat()
@@ -34,18 +36,22 @@ class MeshViewer:
         self.z_axis = Line([0,0,0], [0,0,2], lw=3).c("Blue")
         self.y_axis = Line([0,0,0], [0,2,0], lw=3).c("Green")
         self.x_axis = Line([0,0,0], [2,0,0], lw=3).c("Red")
+        self.diagonal = Line(pts[0], pts[1], lw=10).c("Red")
+        
+
         self.unit_box = Box(width=1,height=1,length=1).c("Black").wireframe(True)
         self.origMesh = self.mesh.copy().c("Black").wireframe(True)
 
         self.show()
+        
 
     def show(self):
 
         self.plt = Plotter(axes=11)
         self.orig_camera = self.plt.camera.DeepCopy(self.plt.camera)
-
+        self.convexHull = ConvexHull(self.mesh.vertices).c("Green").alpha(0.2)
         self.buildGui()
-        self.plt.show(self.mesh, self.ball,__doc__)
+        self.plt.show(self.mesh, self.convexHull, self.ball,__doc__)
 
     def importObject(self, obj, ename):
         # file = crossfiledialog.open_file()
@@ -156,6 +162,10 @@ class MeshViewer:
             self.plt.remove(self.x_axis, self.y_axis, self.z_axis)
         elif status == "hide unit box":
             self.plt.remove(self.unit_box)
+        elif status == "show diagonal":
+            self.plt.add(self.diagonal)
+        elif status == "hide diagonal":
+            self.plt.remove(self.diagonal)
         self.set_btn.switch()
 
     def trigger_orig(self, obj, ename):
@@ -243,7 +253,7 @@ class MeshViewer:
         self.set_btn = self.plt.add_button(
             self.set_options,
             pos=(0.15, 0.70),
-            states=["show axis", "show unit box", "hide axis", "hide unit box"],
+            states=["show axis", "show unit box","show diagonal", "hide axis", "hide unit box","hide diagonal"],
             c=["w"],
             bc=["dg"],
             font="courier",
@@ -280,11 +290,16 @@ Example Files
 Off Center Door: D01104
 Off Center Lamp: m619
 Off Center Guitar\D00534.obj
-
+FloorLamp/m619.obj
 """
 
 
 if __name__ == "__main__":
     print("Starting Mesh View")
-    file = "../shapes/FloorLamp/m619.obj"
-    mv = MeshViewer(file=file)
+    train = normalize_shape(Mesh("..\shapes\Train\D01014.obj"))
+
+    #head = normalize_shape(Mesh("..\shapes\HumanHead\D00131.obj"))
+    #insect = normalize_shape(Mesh("..\shapes\Insect\D00117.obj"))
+    diag = extract_features(train)["diameterPts"]
+    file = "../shapes/train/D01014.obj"
+    mv = MeshViewer(file=file,directMesh=train,pts=diag)
