@@ -121,7 +121,8 @@ def normalize_pose(mesh: Mesh, inplace=True):
 
 def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, max_iters=10):
     """
-    Redistributes vertices so that they are within a target range and more uniformly distributed across the object.
+    Redistributes vertices so that they are within a target range and more uniformly distributed across the object. 
+    Also fills holes and normalises polygonal orientation.
     ----------------------------
     Input:
         Vedo Mesh
@@ -131,6 +132,8 @@ def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, 
     Returns:
         Vedo Mesh with vertices redistributed
     """
+    mesh.fill_holes()
+    mesh.compute_normals()  # Normalises polygonal orientations
     _min, _max = target_range
     i = 0
     while not (_max >= mesh.nvertices >= _min) and (i := i+1) < max_iters:
