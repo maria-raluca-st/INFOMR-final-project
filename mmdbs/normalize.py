@@ -132,8 +132,6 @@ def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, 
     Returns:
         Vedo Mesh with vertices redistributed
     """
-    mesh.fill_holes()
-    mesh.compute_normals()  # Normalises polygonal orientations
     _min, _max = target_range
     i = 0
     while not (_max >= mesh.nvertices >= _min) and (i := i+1) < max_iters:
@@ -144,6 +142,8 @@ def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, 
             )  # Slow reduction should be better
         else:
             mesh.subdivide(method=2)  # Slow/adaptive should be better
+    mesh.fill_holes()
+    mesh.compute_normals()  # Normalises polygonal orientations
 
 
 
