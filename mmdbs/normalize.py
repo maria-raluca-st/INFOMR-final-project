@@ -119,7 +119,7 @@ def normalize_pose(mesh: Mesh, inplace=True):
     return wMesh
 
 
-def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, max_iters=10):
+def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, max_iters=50):
     """
     Redistributes vertices so that they are within a target range and more uniformly distributed across the object. 
     Also fills holes and normalises polygonal orientation.
