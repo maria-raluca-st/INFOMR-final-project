@@ -119,9 +119,10 @@ def normalize_pose(mesh: Mesh, inplace=True):
     return wMesh
 
 
-def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, max_iters=10):
+def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, max_iters=50):
     """
-    Redistributes vertices so that they are within a target range and more uniformly distributed across the object.
+    Redistributes vertices so that they are within a target range and more uniformly distributed across the object. 
+    Also fills holes and normalises polygonal orientation.
     ----------------------------
     Input:
         Vedo Mesh
@@ -141,6 +142,8 @@ def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, 
             )  # Slow reduction should be better
         else:
             mesh.subdivide(method=2)  # Slow/adaptive should be better
+    mesh.fill_holes()
+    mesh.compute_normals()  # Normalises polygonal orientations
 
 
 
