@@ -1,4 +1,5 @@
 from vedo import Mesh, LinearTransform
+import pymeshlab
 import numpy as np
 
 
@@ -15,6 +16,7 @@ def normalize_shape(mesh: Mesh, inplace=True):
         wMesh = mesh.copy()
     else:
         wMesh = mesh
+    # print("Step vertices"
     normalize_vertices(wMesh)
     normalize_position(wMesh)
     normalize_pose(wMesh)
@@ -41,11 +43,10 @@ def get_eigenvectors(mesh: Mesh):
     return eigenvectors, eigenvalues
 
 
-
-def get_center_of_mass(mesh:Mesh):
-    #Naive COmputation: np.mean(mesh.vertices,axis=0)
+def get_center_of_mass(mesh: Mesh):
+    # Naive COmputation: np.mean(mesh.vertices,axis=0)
     return mesh.center_of_mass()
-    #Bary Center is the mean of the triangle centers weighed by their area
+    # Bary Center is the mean of the triangle centers weighed by their area
     meshVolume = 0
     temp = (0, 0, 0)
 
@@ -97,17 +98,24 @@ def normalize_pose(mesh: Mesh, inplace=True):
         wMesh = mesh.copy()
     else:
         wMesh = mesh
-    eigenvectors, eigenvalues = get_eigenvectors(wMesh)
-    ranking = np.argpartition(eigenvalues, 2)
-    com = get_center_of_mass(mesh)
-    aligned_matrix = [
-        eigenvectors[ranking[2]],
-        eigenvectors[ranking[1]],
-        np.cross(eigenvectors[ranking[2]], eigenvectors[ranking[1]]),
-    ]
-    wMesh.vertices = np.dot(
-        wMesh.vertices - com, np.transpose(aligned_matrix)
-    )  # Simple Crossproduct
+    lab_mesh = pymeshlab.MeshSet()
+    lab_mesh.add_mesh(pymeshlab.Mesh(wMesh.vertices))
+    lab_mesh.apply_filter(
+        "compute_matrix_by_principal_axis", pointsflag=True, freeze=True, alllayers=True
+    )
+    wMesh.vertices = lab_mesh.current_mesh().vertex_matrix()
+
+    # eigenvectors, eigenvalues = get_eigenvectors(wMesh)
+    # ranking = np.argpartition(eigenvalues, 2)
+    # com = get_center_of_mass(mesh)
+    # aligned_matrix = [
+    #     eigenvectors[ranking[2]],
+    #     eigenvectors[ranking[1]],
+    #     np.cross(eigenvectors[ranking[2]], eigenvectors[ranking[1]]),
+    # ]
+    # wMesh.vertices = np.dot(
+    #     wMesh.vertices - com, np.transpose(aligned_matrix)
+    # )  # Simple Crossproduct
     return wMesh
     nverts = []  # Manual Method
     for v in wMesh.vertices:
@@ -121,7 +129,7 @@ def normalize_pose(mesh: Mesh, inplace=True):
 
 def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, max_iters=50):
     """
-    Redistributes vertices so that they are within a target range and more uniformly distributed across the object. 
+    Redistributes vertices so that they are within a target range and more uniformly distributed across the object.
     Also fills holes and normalises polygonal orientation.
     ----------------------------
     Input:
@@ -146,7 +154,6 @@ def normalize_vertices(mesh: Mesh, target_range=(5000, 8000), max_fraction=0.7, 
     mesh.compute_normals()  # Normalises polygonal orientations
 
 
-
 def normalize_flip(mesh: Mesh):
     """
     Flips the mesh so that the majority of the shape's mass is in the positive half of each axis (x, y, z).
@@ -162,11 +169,11 @@ def normalize_flip(mesh: Mesh):
     f = [0.0, 0.0, 0.0]
 
     for i1, i2, i3 in mesh.cells:  # loop over list of triangles (indices of vertices)
-    
-        v1, v2, v3 = mesh.vertices[i1], mesh.vertices[i2], mesh.vertices[i3] # vertices
-        Ct = (v1 + v2 + v3) / 3.0 # center of triangle
-      
-        for i in range(3): # loop over x, y, z
+
+        v1, v2, v3 = mesh.vertices[i1], mesh.vertices[i2], mesh.vertices[i3]  # vertices
+        Ct = (v1 + v2 + v3) / 3.0  # center of triangle
+
+        for i in range(3):  # loop over x, y, z
             f[i] += np.sign(Ct[i]) * (Ct[i] ** 2)
 
     flip_signs = [np.sign(f[0]), np.sign(f[1]), np.sign(f[2])]
@@ -190,17 +197,17 @@ def normalize_scale(mesh: Mesh):
     """
 
     bbox = mesh.bounds()
-    
-    Dx = np.abs(bbox[0] - bbox[1])  
-    Dy = np.abs(bbox[2] - bbox[3])  
-    Dz = np.abs(bbox[4] - bbox[5])  
-    
-    Dmax = max(Dx, Dy, Dz) #   # largest dimension of bounding box
-    
-    s = 1 / Dmax # scaling factor
 
-    mesh.scale(s) # resizing mesh
-    
+    Dx = np.abs(bbox[0] - bbox[1])
+    Dy = np.abs(bbox[2] - bbox[3])
+    Dz = np.abs(bbox[4] - bbox[5])
+
+    Dmax = max(Dx, Dy, Dz)  #   # largest dimension of bounding box
+
+    s = 1 / Dmax  # scaling factor
+
+    mesh.scale(s)  # resizing mesh
+
     return mesh
 
     Dx = bbox_max[0] - bbox_min[0]
