@@ -2,7 +2,7 @@
 MMR.code-workspace
 .vscode/*
 */scratch.*
-normshapes/
+# normshapes/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
