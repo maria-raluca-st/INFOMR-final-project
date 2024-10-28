@@ -99,6 +99,7 @@ class MyPanel(wx.Panel):
     
     def on_normalize(self,event):
         self.mesh = normalize_shape(self.mesh)
+        self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
         self.plt.render()
         
 
