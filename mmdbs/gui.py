@@ -1,11 +1,49 @@
 import wx
 from vtk.wx.wxVTKRenderWindowInteractor import wxVTKRenderWindowInteractor
 import vedo
+import numpy as np
+
+
+class MyPanel(wx.Panel):
+    """This is the custom panel class containing a dropdown and two buttons."""
+    def __init__(self, parent, scroll_sizer):
+        super(MyPanel, self).__init__(parent)
+
+        self.scroll_sizer = scroll_sizer  # Reference to the scrollable panel's sizer
+        self.parent = parent  # Reference to the scrolling panel (wxScrolledWindow)
+
+        # Horizontal sizer to contain dropdown and buttons
+        panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Drop-down (wxChoice)
+        choices = ['Option 1', 'Option 2', 'Option 3']
+        self.dropdown = wx.Choice(self, choices=choices)
+        panel_sizer.Add(self.dropdown, 1, wx.ALL | wx.EXPAND, 5)
+
+        # "Remove" button
+        self.remove_button = wx.Button(self, label="Remove")
+        self.remove_button.Bind(wx.EVT_BUTTON, self.on_remove)
+        panel_sizer.Add(self.remove_button, 0, wx.ALL, 5)
+
+        # "Normalize" button
+        self.normalize_button = wx.Button(self, label="Normalize")
+        panel_sizer.Add(self.normalize_button, 0, wx.ALL, 5)
+
+        # Set the sizer and layout for this panel
+        self.SetSizer(panel_sizer)
+
+    def on_remove(self, event):
+        """Handles removing this panel from the scrollable sizer."""
+        self.scroll_sizer.Remove(self)  # Remove panel from sizer
+        self.Destroy()  # Destroy the panelinstance 
+        self.parent.Layout()  # Refresh the parent layout
+        self.parent.FitInside()  # Adjust scrollbars
+
 
 class VedoApp(wx.Frame):
     def __init__(self, *args, **kw):
         super(VedoApp, self).__init__(*args, **kw)
-
+        self.lines=False
         # Set up the wx Frame and sizer
         self.SetTitle("Vedo 3D Viewer with wxPython")
         self.SetSize((1000, 600))
@@ -27,66 +65,82 @@ class VedoApp(wx.Frame):
         self.z_axis = vedo.Line([0,0,0], [0,0,2], lw=3).c("Blue")
         self.y_axis = vedo.Line([0,0,0], [0,2,0], lw=3).c("Green")
         self.x_axis = vedo.Line([0,0,0], [2,0,0], lw=3).c("Red")
-
         # Create sidebar checkboxes and buttons
         self.create_sidebar()
 
         # Add default unit box
         self.unit_box = vedo.Box(pos=(0, 0, 0), width=1, height=1, length=1).c("Black").wireframe(True)
         self.plotter.add(self.unit_box)
-
+        self.mesh = vedo.Sphere()
         # Finalize and show everything
         self.plotter.show(interactive=False)
         self.Layout()
         self.Centre()
         self.Show()
 
+    def on_reset_camera(self):
+        return
     def create_sidebar(self):
-        """Create a sidebar on the left with checkboxes and a button for loading meshes."""
-        # Create a vertical sizer for the sidebar
-        sidebar_sizer = wx.BoxSizer(wx.VERTICAL)
+        """Create a sidebar on the left with checkboxes, buttons, and dynamic panels."""
 
-        # Grid checkbox
-        self.grid_cb = wx.CheckBox(self, label="Show Grid")
-        self.grid_cb.SetValue(True)
-        self.grid_cb.Bind(wx.EVT_CHECKBOX, self.on_toggle_grid)
-        sidebar_sizer.Add(self.grid_cb, flag=wx.EXPAND | wx.ALL, border=5)
+        # Create a vertical sizer for the sidebar
+        self.sidebar_sizer = wx.BoxSizer(wx.VERTICAL)
 
         # Axes checkbox
         self.axes_cb = wx.CheckBox(self, label="Show Unit Axis")
         self.axes_cb.SetValue(True)
         self.axes_cb.Bind(wx.EVT_CHECKBOX, self.on_toggle_axes)
-        sidebar_sizer.Add(self.axes_cb, flag=wx.EXPAND | wx.ALL, border=5)
+        self.sidebar_sizer.Add(self.axes_cb, flag=wx.EXPAND | wx.ALL, border=5)
 
         # Unit box checkbox
         self.unit_box_cb = wx.CheckBox(self, label="Show Unit Box")
         self.unit_box_cb.SetValue(True)
         self.unit_box_cb.Bind(wx.EVT_CHECKBOX, self.on_toggle_unit_box)
-        sidebar_sizer.Add(self.unit_box_cb, flag=wx.EXPAND | wx.ALL, border=5)
+        self.sidebar_sizer.Add(self.unit_box_cb, flag=wx.EXPAND | wx.ALL, border=5)
 
-        # Button for loading mesh
+        # Reset Camera button
+        self.reset_btn = wx.Button(self, label="Reset Camera")
+        self.reset_btn.Bind(wx.EVT_BUTTON, self.on_reset_camera)
+        self.sidebar_sizer.Add(self.reset_btn, flag=wx.EXPAND | wx.ALL, border=5)
+
+        # Load Mesh button
         self.load_mesh_btn = wx.Button(self, label="Load Mesh")
         self.load_mesh_btn.Bind(wx.EVT_BUTTON, self.on_load_mesh)
-        sidebar_sizer.Add(self.load_mesh_btn, flag=wx.EXPAND | wx.ALL, border=5)
+        self.sidebar_sizer.Add(self.load_mesh_btn, flag=wx.EXPAND | wx.ALL, border=5)
 
-        #Dropdown for selecting view
-        self.view_choices = ["flat shading", "smooth shading", "random colors", "hide"]
+        # Dropdown for selecting view
+        self.view_choices = ["flat shading", "smooth shading", "random colors", "hide", "wireframe", "shaded lines"]
         self.view_dropdown = wx.Choice(self, choices=self.view_choices)
         self.view_dropdown.SetSelection(0)  # Default to first choice
         self.view_dropdown.Bind(wx.EVT_CHOICE, self.on_change_view)
-        sidebar_sizer.Add(self.view_dropdown, flag=wx.EXPAND | wx.ALL, border=5)
+        self.sidebar_sizer.Add(self.view_dropdown, flag=wx.EXPAND | wx.ALL, border=5)
 
-        # Add sidebar sizer to the frame
-        self.GetSizer().Add(sidebar_sizer, flag=wx.EXPAND)
+        # Button to add new dynamic panels
+        self.add_panel_btn = wx.Button(self, label="Add Panel")
+        self.add_panel_btn.Bind(wx.EVT_BUTTON, self.on_add_panel)
+        self.sidebar_sizer.Add(self.add_panel_btn, flag=wx.EXPAND | wx.ALL, border=5)
 
-    def on_toggle_grid(self, event):
-        """Show or hide the grid based on the checkbox state."""
-        if self.grid_cb.GetValue():
-            self.plotter.show_grid()
-        else:
-            self.plotter.hide_grid()
+        # Create a scrolling panel to hold dynamic panels
+        self.scroll_panel = wx.ScrolledWindow(self, style=wx.VSCROLL)
+        self.scroll_panel.SetScrollRate(5, 5)
+        self.scroll_sizer = wx.BoxSizer(wx.VERTICAL)
+        self.scroll_panel.SetSizer(self.scroll_sizer)
+        self.sidebar_sizer.Add(self.scroll_panel, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
 
-        self.plotter.render()
+        # Add sidebar sizer to the main panel
+        self.GetSizer().Add(self.sidebar_sizer, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
+
+    def on_add_panel(self, event):
+        """Adds a new instance of MyPanel to the scrolling panel."""
+        new_panel = MyPanel(self.scroll_panel, self.scroll_sizer)
+        self.scroll_sizer.Add(new_panel, 0, wx.EXPAND | wx.ALL, 5)
+
+        # Refresh the scroll panel
+        self.scroll_panel.Layout()
+        self.scroll_panel.FitInside()
+        self.scroll_panel.Scroll(0, self.scroll_panel.GetScrollRange(wx.VERTICAL))
+
+
 
     def on_toggle_axes(self, event):
         """Show or hide the unit axes based on the checkbox state."""
@@ -106,6 +160,16 @@ class VedoApp(wx.Frame):
 
         self.plotter.render()
 
+    def add_panel(self):
+        """Adds a new instance of MyPanel to the scrolling panel"""
+        new_panel = MyPanel(self.sidebar_sizer, self.sidebar_sizer)
+        self.sidebar_sizer.Add(new_panel, 0, wx.EXPAND | wx.ALL, 5)
+
+        # Refresh the scroll panel
+        self.sidebar_sizer.Layout()
+        self.sidebar_sizer.FitInside()
+        #self.sidebar_sizer.Scroll(0, self.sidebar_sizer.GetScrollRange(wx.VERTICAL))
+
     def on_load_mesh(self, event):
         """Open a file dialog to load a mesh and display it."""
         wildcard = "Mesh files (*.stl;*.ply;*.vtk; *.obj)|*.stl;*.ply;*.vtk;*.obj|" \
@@ -123,7 +187,8 @@ class VedoApp(wx.Frame):
                 # Add mesh to the plotter and render it
                 self.plotter.add(self.mesh)
                 self.plotter.render()
-
+                self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
+                self.add_panel()
             except Exception as e:
                 wx.MessageBox(f"Failed to load mesh: {str(e)}", "Error", wx.ICON_ERROR)
 
@@ -139,23 +204,39 @@ class VedoApp(wx.Frame):
                 self.mesh.alpha(0.5)
                 self.mesh.c("violet")
                 self.hidden = False
+                self.mesh.linewidth(0)
 
             elif status == "smooth shading":
-                self.mesh.phong()
                 self.mesh.wireframe(False)
                 self.hidden = False
+                self.mesh.c("violet")
+                self.mesh.phong()
+                
+                self.mesh.linewidth(0)
 
             elif status == "random colors":
                 self.mesh.wireframe(False)
                 self.mesh.cellcolors = self.rgba
                 self.hidden = False
+                self.mesh.flat()
+                self.mesh.linewidth(0)
 
             elif status == "hide":
-                self.hidden = True
-                if self.lines:
-                    self.mesh.wireframe(True)
-                else:
-                    self.mesh.alpha(0)
+                self.mesh.alpha(0)
+                self.mesh.linewidth(0)
+            
+            elif status == "wireframe":
+                self.mesh.alpha(1)
+                self.mesh.linewidth(1)
+                self.mesh.c("Black").wireframe(True)
+                
+
+            elif status == "shaded lines":
+                self.mesh.wireframe(False)
+                self.mesh.alpha(0.5)
+                self.mesh.flat()
+                self.mesh.c("violet")
+                self.mesh.linewidth(1)
 
             self.plotter.render()  # Update the plotter view
 
