@@ -36,6 +36,7 @@ class MyPanel(wx.Panel):
         # "Normalize" button
         self.normalize_button = wx.Button(self, label="Normalize")
         self.panel_sizer.Add(self.normalize_button, 0, wx.ALL, 5)
+        self.normalize_button.Bind(wx.EVT_BUTTON, self.on_normalize)
         # Set the sizer and layout for this panel
         self.SetSizer(self.panel_sizer)
 
