@@ -88,11 +88,15 @@ class MeshViewer:
 
         elif status == "smooth shading":
             self.mesh.phong()
+            self.mesh.c("violet")
             self.mesh.wireframe(False)
+            self.mesh.alpha(0.5)
 
         elif status == "random colors":
             self.mesh.wireframe(False)
             self.mesh.cellcolors = self.rgba
+            self.mesh.flat()
+            self.mesh.alpha(0.5)
 
         self.view_btn.switch()
 
