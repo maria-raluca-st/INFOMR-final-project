@@ -1,9 +1,11 @@
+from itertools import combinations
+from math import factorial
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 from scipy.stats import wasserstein_distance as emd
-from itertools import combinations
+from tqdm import tqdm
 
 NON_HIST_FEATURES = [
     "area",
@@ -16,12 +18,14 @@ NON_HIST_FEATURES = [
 ]
 
 
+
 class RetrievalEngine:
     def __init__(
         self,
         feature_path: Path = Path("mesh_features.csv"),
         dropped=["mesh_name", "class"],
         non_hist_features=NON_HIST_FEATURES,
+        hist_norm_path: Path = Path("histogram_zscore.npz")
     ):
         # Load features and separate metadata
         df_features = pd.read_csv(feature_path)
@@ -50,7 +54,13 @@ class RetrievalEngine:
         # TBD: weighing for the histogram distances, placeholder values
         # self.mu = np.zeros(len(self.grouped_index_cols.keys()))
         # self.sigma = np.ones(len(self.grouped_index_cols.keys()))
-        self.mu, self.sigma = self._compute_hist_distance_stats()
+        if hist_norm_path.exists():
+            arr = np.load(hist_norm_path)
+            self.mu = arr['mu']
+            self.sigma = arr['sigma']
+        else:
+            self.mu, self.sigma = self._compute_hist_distance_stats()
+            np.savez(hist_norm_path, mu=self.mu, sigma=self.sigma)
 
     def _compute_hist_distance_stats(self):
         """Compute mean and standard deviation of distances for each histogram group."""
@@ -59,13 +69,15 @@ class RetrievalEngine:
         mu = np.zeros(num_histograms)
         sigma = np.ones(num_histograms)
 
+        total = factorial(self.X.shape[0]) / (2 * factorial(self.X.shape[0] - 2))
+
         for i, (hist_name, cols) in enumerate(self.grouped_index_cols.items()):
             # pairwise distances 
             distances = []
-            for u, v in combinations(self.X, 2):
+        
+            for u, v in tqdm(combinations(self.X, 2), total=total):
                 distances.append(emd(u[cols], v[cols]))
             distances = np.array(distances)
-
             # mean and std for this histogram's distances
             mu[i] = distances.mean()
             sigma[i] = distances.std()
@@ -114,14 +126,29 @@ class RetrievalEngine:
         return self.metadata.iloc[topk_idx], dist[topk_idx]
     
     def retrieve_topr(self, x, r=5):
-        dist = np.fromiter((self.dist_func(x, o).sum() for o in self.X), dtype=x.dtype
-        )
+        dist = np.fromiter((self.dist_func(x, o).sum() for o in self.X), dtype=x.dtype)
         topr_idx = np.argwhere(dist < r).flatten()
         return self.metadata.iloc[topr_idx], dist[topr_idx]
  
 
-
 if __name__ == "__main__":
     ret = RetrievalEngine("mesh_features.csv")
-    print(ret.retrieve_topk(ret.X[56]))
-    print(ret.retrieve_topr(ret.X[0]))
+    meta, dist = ret.retrieve_topk(ret.X[56])
+    meta = meta.copy()
+    meta['dist'] = dist
+    print("========= Top k=4 ===========")
+    print(meta, end="\n\n")
+    meta, dist = ret.retrieve_topr(ret.X[0])
+    meta = meta.copy()
+    meta['dist'] = dist
+    print("========= Top r=5 ===========")
+    print(meta, end="\n\n")
+
+    print("Distances between objects 56 vs 1122")
+    df_dist = pd.Series(ret.dist_func(ret.X[75], ret.X[1122]), index=NON_HIST_FEATURES + list(ret.grouped_index_cols.keys()))
+    print(df_dist, end="\n\n")
+
+
+    print("When u = v, dist is approx the standardization values:")
+    print((-ret.mu / ret.sigma).sum(), end="\n\n")
+
