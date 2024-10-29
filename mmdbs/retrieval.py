@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import wasserstein_distance as emd
+from itertools import combinations
 
 NON_HIST_FEATURES = [
     "area",
@@ -47,8 +48,29 @@ class RetrievalEngine:
         self.X = X.to_numpy()
 
         # TBD: weighing for the histogram distances, placeholder values
-        self.mu = np.zeros(len(self.grouped_index_cols.keys()))
-        self.sigma = np.ones(len(self.grouped_index_cols.keys()))
+        # self.mu = np.zeros(len(self.grouped_index_cols.keys()))
+        # self.sigma = np.ones(len(self.grouped_index_cols.keys()))
+        self.mu, self.sigma = self._compute_hist_distance_stats()
+
+    def _compute_hist_distance_stats(self):
+        """Compute mean and standard deviation of distances for each histogram group."""
+
+        num_histograms = len(self.grouped_index_cols)
+        mu = np.zeros(num_histograms)
+        sigma = np.ones(num_histograms)
+
+        for i, (hist_name, cols) in enumerate(self.grouped_index_cols.items()):
+            # pairwise distances 
+            distances = []
+            for u, v in combinations(self.X, 2):
+                distances.append(emd(u[cols], v[cols]))
+            distances = np.array(distances)
+
+            # mean and std for this histogram's distances
+            mu[i] = distances.mean()
+            sigma[i] = distances.std()
+        
+        return mu, sigma
 
     def hist_distances(self, u: np.ndarray, v: np.ndarray) -> np.ndarray:
         """Calculates distance weighted EMD between feature vectors u and v, where both contain multiple histograms.
