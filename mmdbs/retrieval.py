@@ -22,6 +22,7 @@ class RetrievalEngine:
         dropped=["mesh_name", "class"],
         non_hist_features=NON_HIST_FEATURES,
     ):
+        # Load features and separate metadata
         df_features = pd.read_csv(feature_path)
         X = df_features.drop(dropped, axis=1)
         self.metadata = df_features[dropped]
@@ -45,30 +46,53 @@ class RetrievalEngine:
         
         self.X = X.to_numpy()
 
-    def hist_distances(self, u, v):
+        # TBD: weighing for the histogram distances, placeholder values
+        self.mu = np.zeros(len(self.grouped_index_cols.keys()))
+        self.sigma = np.ones(len(self.grouped_index_cols.keys()))
+
+    def hist_distances(self, u: np.ndarray, v: np.ndarray) -> np.ndarray:
+        """Calculates distance weighted EMD between feature vectors u and v, where both contain multiple histograms.
+
+
+        Args:
+            u (np.ndarray): Query
+            v (np.ndarray): Sample
+
+        Returns:
+            np.ndarray: EMD distances
+        """
         dist = np.zeros(len(self.grouped_columns))
         for i, cols in enumerate(self.grouped_index_cols.values()):
             dist[i] = emd(u[cols], v[cols])
-        return dist
+        return (dist - self.mu) / self.sigma
 
-    def dist_func(self, u, v, weights=1.0):
+    def dist_func(self, u: np.ndarray, v: np.ndarray) -> np.ndarray:
+        """Combination of L2 for scalar features and EMD for histogram features.
+
+        Args:
+            u (np.ndarray): Query
+            v (np.ndarray): Sample
+
+        Returns:
+            np.ndarray: L2 followed by weighted EMD distances
+        """
         dist = np.zeros(len(self.non_hist_features) + len(self.grouped_columns))
         dist[: len(self.non_hist_features)] = np.linalg.norm(
             u[: len(self.non_hist_features)] - v[: len(self.non_hist_features)]
         )
         dist[len(self.non_hist_features) :] = self.hist_distances(u, v)
 
-        return weights * dist
+        return dist
 
-    def retrieve_topk(self, x, k=4, weights=1.0):
+    def retrieve_topk(self, x, k=4):
         dist = np.fromiter(
-            (self.dist_func(x, o, weights).sum() for o in self.X), dtype=x.dtype
+            (self.dist_func(x, o).sum() for o in self.X), dtype=x.dtype
         )
         topk_idx = dist.argsort()[:k]
         return self.metadata.iloc[topk_idx], dist[topk_idx]
     
-    def retrieve_topr(self, x, r=5, weights=1.0):
-        dist = np.fromiter((self.dist_func(x, o, weights).sum() for o in self.X), dtype=x.dtype
+    def retrieve_topr(self, x, r=5):
+        dist = np.fromiter((self.dist_func(x, o).sum() for o in self.X), dtype=x.dtype
         )
         topr_idx = np.argwhere(dist < r).flatten()
         return self.metadata.iloc[topr_idx], dist[topr_idx]
