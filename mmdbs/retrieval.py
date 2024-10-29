@@ -111,9 +111,8 @@ class RetrievalEngine:
             np.ndarray: L2 followed by weighted EMD distances
         """
         dist = np.zeros(len(self.non_hist_features) + len(self.grouped_columns))
-        dist[: len(self.non_hist_features)] = np.linalg.norm(
-            u[: len(self.non_hist_features)] - v[: len(self.non_hist_features)]
-        )
+        dist[: len(self.non_hist_features)] = np.abs(u[: len(self.non_hist_features)] - v[: len(self.non_hist_features)])
+
         dist[len(self.non_hist_features) :] = self.hist_distances(u, v)
 
         return dist
@@ -125,10 +124,10 @@ class RetrievalEngine:
         topk_idx = dist.argsort()[:k]
         return self.metadata.iloc[topk_idx], dist[topk_idx]
     
-    def retrieve_topr(self, x, r=5):
-        dist = np.fromiter((self.dist_func(x, o).sum() for o in self.X), dtype=x.dtype)
+    def retrieve_topr(self, x, r=5, k=None):
+        meta, dist = self.retrieve_topk(x, k=k)
         topr_idx = np.argwhere(dist < r).flatten()
-        return self.metadata.iloc[topr_idx], dist[topr_idx]
+        return meta.iloc[topr_idx], dist[topr_idx]
  
 
 if __name__ == "__main__":
@@ -138,15 +137,16 @@ if __name__ == "__main__":
     meta['dist'] = dist
     print("========= Top k=4 ===========")
     print(meta, end="\n\n")
-    meta, dist = ret.retrieve_topr(ret.X[0])
+    meta, dist = ret.retrieve_topr(ret.X[0], r=1)
     meta = meta.copy()
     meta['dist'] = dist
-    print("========= Top r=5 ===========")
+    print("========= Top r=1 ===========")
     print(meta, end="\n\n")
 
-    print("Distances between objects 56 vs 1122")
-    df_dist = pd.Series(ret.dist_func(ret.X[75], ret.X[1122]), index=NON_HIST_FEATURES + list(ret.grouped_index_cols.keys()))
-    print(df_dist, end="\n\n")
+    print("Distances between objects two objects")
+    sr_dist = pd.Series(ret.dist_func(ret.X[0], ret.X[2355]), index=NON_HIST_FEATURES + list(ret.grouped_index_cols.keys()))
+    sr_dist['total dist'] = sr_dist.sum()
+    print(sr_dist, end="\n\n")
 
 
     print("When u = v, dist is approx the standardization values:")
