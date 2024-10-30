@@ -1,9 +1,11 @@
 from itertools import combinations
 from math import factorial
 from pathlib import Path
+import pickle
 
 import numpy as np
 import pandas as pd
+from pynndescent import NNDescent
 from scipy.stats import wasserstein_distance as emd
 from tqdm import tqdm
 
@@ -23,6 +25,7 @@ class RetrievalEngine:
     def __init__(
         self,
         feature_path: Path = Path("mesh_features.csv"),
+        index_path: Path = Path("NNDescent_index.pyc"),
         dropped=["mesh_name", "class"],
         non_hist_features=NON_HIST_FEATURES,
         hist_norm_path: Path = Path("histogram_zscore.npz")
@@ -51,9 +54,7 @@ class RetrievalEngine:
         
         self.X = X.to_numpy()
 
-        # TBD: weighing for the histogram distances, placeholder values
-        # self.mu = np.zeros(len(self.grouped_index_cols.keys()))
-        # self.sigma = np.ones(len(self.grouped_index_cols.keys()))
+        # Weighing for the histogram distances
         if hist_norm_path.exists():
             arr = np.load(hist_norm_path)
             self.mu = arr['mu']
@@ -61,6 +62,17 @@ class RetrievalEngine:
         else:
             self.mu, self.sigma = self._compute_hist_distance_stats()
             np.savez(hist_norm_path, mu=self.mu, sigma=self.sigma)
+
+        # Loading ANN index
+        if index_path.exists():
+            with index_path.open('rb') as fp:
+                self.index = pickle.load(fp)
+        else:
+            self.index = NNDescent(self.X)
+            with index_path.open("wb") as fp:
+                pickle.dump(self.index, fp)
+
+        
 
     def _compute_hist_distance_stats(self):
         """Compute mean and standard deviation of distances for each histogram group."""
@@ -128,6 +140,20 @@ class RetrievalEngine:
         meta, dist = self.retrieve_topk(x, k=k)
         topr_idx = np.argwhere(dist < r).flatten()
         return meta.iloc[topr_idx], dist[topr_idx]
+    
+    def __call__(self, x, method='custom', k=4, r=None):
+        if not method in ('custom', 'ann'):
+            raise TypeError("Method must be in ('custom', 'ann')")
+
+        if method == 'ann':
+            idx, dist = self.index.query(x.reshape(1, -1), k=k)
+            return self.metadata.iloc[idx.flatten()], dist.flatten()
+        elif method == 'custom' and r:
+            return self.retrieve_topr(x, r=r, k=k)
+        else:
+            return self.retrieve_topk(x, k=k)
+            
+        
  
 
 if __name__ == "__main__":
@@ -137,11 +163,19 @@ if __name__ == "__main__":
     meta['dist'] = dist
     print("========= Top k=4 ===========")
     print(meta, end="\n\n")
-    meta, dist = ret.retrieve_topr(ret.X[0], r=1)
+
+    print("========= ANN k=4 ===========")
+    meta, dist = ret(ret.X[56], 'ann', k=4)
     meta = meta.copy()
     meta['dist'] = dist
+    print(meta, end='\n\n')
+
     print("========= Top r=1 ===========")
+    meta, dist = ret.retrieve_topr(ret.X[56], r=0)
+    meta = meta.copy()
+    meta['dist'] = dist
     print(meta, end="\n\n")
+
 
     print("Distances between objects two objects")
     sr_dist = pd.Series(ret.dist_func(ret.X[0], ret.X[2355]), index=NON_HIST_FEATURES + list(ret.grouped_index_cols.keys()))
