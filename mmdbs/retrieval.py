@@ -8,6 +8,8 @@ import pandas as pd
 from pynndescent import NNDescent
 from scipy.stats import wasserstein_distance as emd
 from tqdm import tqdm
+from feature_extraction import process_vedo_mesh
+import re
 
 NON_HIST_FEATURES = [
     "area",
@@ -36,10 +38,13 @@ class RetrievalEngine:
         self.metadata = df_features[dropped]
 
         # Identify and Z-score standardise Non-Histogram (scalar) features
-        self.non_hist_features = non_hist_features
+        self.non_hist_features = non_hist_features #[X.columns.get_loc(feat) for feat in non_hist_features]
+        self.non_hist_mean = X[non_hist_features].mean(axis=0)
+        self.non_hist_std = X[non_hist_features].std(axis=0)
+        
         X[non_hist_features] = (
-            X[non_hist_features] - X[non_hist_features].mean()
-        ) / X[non_hist_features].std()
+            X[non_hist_features] - self.non_hist_mean
+        ) / self.non_hist_std
         
         # Identify Histogram features, remove auxiliary columns 
         hist_features = X.columns.difference(non_hist_features)
@@ -141,6 +146,27 @@ class RetrievalEngine:
         topr_idx = np.argwhere(dist < r).flatten()
         return meta.iloc[topr_idx], dist[topr_idx]
     
+    def retrieve_mesh(self, mesh, method='custom', k=4, r=None):
+        name = Path(mesh.filename).name
+        #name = mesh.filename.split("\\","/")[-1]
+        print(name)
+        if(name in self.metadata["mesh_name"].values):
+            # x = self.metadata.loc[self.metadata["mesh_name"]==name].to_numpy()
+            idx = np.argwhere(self.metadata["mesh_name"]==name).flatten()
+            x = self.X[idx].flatten()
+            print("FOUND")
+            print(x.shape)
+        else:
+            df_x = process_vedo_mesh(mesh)
+            df_x[self.non_hist_features] = (df_x[self.non_hist_features] - self.non_hist_mean) / self.non_hist_std
+            # assert False, "I WAS NOT FOUND" + name
+            x = df_x.to_numpy().flatten()
+            print(x.shape)
+            #standardize
+            # x[self.non_hist_features] = (x[self.non_hist_features]-self.non_hist_mean)/self.non_hist_std
+        meta, dist = self.__call__(x,method,k,r)
+        return [Path("../normshapes")/entry[1][1]/entry[1][0] for entry in meta.iterrows()]
+        
     def __call__(self, x, method='custom', k=4, r=None):
         if not method in ('custom', 'ann'):
             raise TypeError("Method must be in ('custom', 'ann')")
