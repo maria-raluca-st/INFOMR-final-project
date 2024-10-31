@@ -3,11 +3,12 @@ from vtk.wx.wxVTKRenderWindowInteractor import wxVTKRenderWindowInteractor
 import vedo
 import numpy as np
 from normalize import normalize_shape
+from retrieval import RetrievalEngine
 
 
 class MyPanel(wx.Panel):
     """This is the custom panel class containing a dropdown and two buttons."""
-    def __init__(self, parent, scroll_sizer, meshRef, pltRef):
+    def __init__(self, parent, scroll_sizer, meshRef, pltRef, frame):
         super(MyPanel, self).__init__(parent)
         
         self.scroll_sizer = scroll_sizer  # Reference to the scrollable panel's sizer
@@ -15,7 +16,8 @@ class MyPanel(wx.Panel):
 
         self.mesh = meshRef
         self.plt = pltRef
-
+        self.frame=frame
+        self.frame.meshes.append(self.mesh)
         self.rgba = np.random.rand(self.mesh.ncells, 4) * 255
         # Horizontal sizer to contain dropdown and buttons
         self.panel_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -93,9 +95,11 @@ class MyPanel(wx.Panel):
             self.plt.render()  # Update the plotter view
 
         #self.scroll_sizer.Remove(self)  # Remove panel from sizer
+        self.frame.meshes.remove(self.mesh)
         self.Destroy()  # Destroy the panelinstance 
         self.parent.Layout()  # Refresh the parent layout
         self.parent.FitInside()  # Adjust scrollbars
+
     
     def on_normalize(self,event):
         self.mesh = normalize_shape(self.mesh)
@@ -117,6 +121,8 @@ class VedoApp(wx.Frame):
         self.SetSizer(sizer)
         sizer.Add(self.widget, 1, wx.EXPAND)
 
+        self.meshes = []
+
         # Initialize the interactor
         self.widget.Enable(1)
         self.widget.AddObserver("ExitEvent", lambda o, e, f=self: f.Close())
@@ -137,6 +143,8 @@ class VedoApp(wx.Frame):
         self.mesh = vedo.Sphere()
         # Finalize and show everything
         self.plotter.show(interactive=False)
+        self.retrieval = RetrievalEngine()
+
         self.Layout()
         self.Centre()
         self.Show()
@@ -190,6 +198,14 @@ class VedoApp(wx.Frame):
         self.GetSizer().Add(self.sidebar_sizer, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
 
     def on_query(self, event):
+        if(self.meshes!=[]):
+            retMeshes = self.retrieval.retrieve_mesh(self.meshes[0],method="custom",k=4)
+            for mshpath in retMeshes[1::]:
+                print(mshpath)
+                rmesh = vedo.Mesh(str(mshpath))
+                self.add_panel(rmesh)
+
+                self.plotter.render()
         return
 
 
@@ -213,9 +229,9 @@ class VedoApp(wx.Frame):
         self.plotter.render()
 
     def add_panel(self,mesh):
-        new_panel = MyPanel(self.scroll_panel, self.scroll_sizer,mesh, self.plotter)
+        new_panel = MyPanel(self.scroll_panel, self.scroll_sizer,mesh, self.plotter, self)
         self.scroll_sizer.Add(new_panel, 0, wx.EXPAND | wx.ALL, 5)
-
+        self.plotter.add(mesh)
         # Refresh the scroll panel
         self.scroll_panel.Layout()
         self.scroll_panel.FitInside()
@@ -234,16 +250,15 @@ class VedoApp(wx.Frame):
             file_path = dialog.GetPath()
 
             # Try to load the mesh
-            try:
-                self.plotter.remove(self.mesh)  # Optionally clear previous objects
-                mesh = vedo.Mesh(file_path)
+            #try:
+            self.plotter.remove(self.mesh)  # Optionally clear previous objects
+            mesh = vedo.Mesh(file_path)
                 # Add mesh to the plotter and render it
-                self.plotter.add(mesh)
-                self.plotter.render()
-                self.add_panel(mesh)
+            self.plotter.render()
+            self.add_panel(mesh)
                 
-            except Exception as e:
-                wx.MessageBox(f"Failed to load mesh: {str(e)}", "Error", wx.ICON_ERROR)
+            #except Exception as e:
+            #    wx.MessageBox(f"Failed to load mesh: {str(e)}", "Error", wx.ICON_ERROR)
         
         """Adds a new instance of MyPanel to the scrolling panel."""
         dialog.Destroy()
