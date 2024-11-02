@@ -4,7 +4,7 @@ import vedo
 import numpy as np
 from normalize import normalize_shape
 from retrieval import RetrievalEngine
-
+from pathlib import Path
 
 class MyPanel(wx.Panel):
     """This is the custom panel class containing a dropdown and two buttons."""
@@ -153,6 +153,8 @@ class VedoApp(wx.Frame):
         self.plotter.show(interactive=False)
         self.retrieval = RetrievalEngine()
 
+        self.meta=None
+
         self.Layout()
         self.Centre()
         self.Show()
@@ -264,7 +266,9 @@ class VedoApp(wx.Frame):
     def on_query(self, event):
         if(self.meshes!=[]):
             offset=1
-            retMeshes = self.retrieval.retrieve_mesh(self.meshes[0],method=self.search_method,k=self.search_k,r=self.search_r)
+            retMeshes,meta = self.retrieval.retrieve_mesh(self.meshes[0],method=self.search_method,k=self.search_k,r=self.search_r)
+            self.meta=meta
+            print(meta)
             for mshpath in retMeshes[1::]:
                 print(mshpath)
                 rmesh = vedo.Mesh(str(mshpath))
@@ -285,6 +289,12 @@ class VedoApp(wx.Frame):
         self.curcycle = (self.curcycle+1)%len(self.meshes)
         curMesh = self.meshes[self.curcycle]
         curMesh.c("red")
+        filename = Path(curMesh.filename).name
+    
+        if(self.meta!=None and filename in self.meta["mesh_name"].values):
+            row = self.meta.loc[self.meta["mesh_name"]==filename][0]
+            print(row)
+            infostr = f'Name: {row["mesh_name"]} class:{row["class"]}, dist:{row["dist"]}'
         npos=curMesh.transform.position-pos
         self.plotter.fly_to(npos)
         self.plotter.look_at(plane=plane)

@@ -165,7 +165,8 @@ class RetrievalEngine:
             #standardize
             # x[self.non_hist_features] = (x[self.non_hist_features]-self.non_hist_mean)/self.non_hist_std
         meta, dist = self.__call__(x,method,k,r)
-        return [Path("../normshapes")/entry[1][1]/entry[1][0] for entry in meta.iterrows()]
+        meta['dist'] = dist
+        return [Path("../normshapes")/entry[1][1]/entry[1][0] for entry in meta.iterrows()],meta
         
     def __call__(self, x, method='custom', k=4, r=None):
         if not method in ('custom', 'ann'):
