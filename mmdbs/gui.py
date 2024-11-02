@@ -127,6 +127,10 @@ class VedoApp(wx.Frame):
         self.meshes = []
         self.curcycle=0
 
+        self.search_method="custom"
+        self.search_k = 4
+        self.search_r = None
+
         # Initialize the interactor
         self.widget.Enable(1)
         self.widget.AddObserver("ExitEvent", lambda o, e, f=self: f.Close())
@@ -198,15 +202,31 @@ class VedoApp(wx.Frame):
         # Add the horizontal sizer with buttons to the main sizer
         self.sidebar_sizer.Add(button_sizer, flag=wx.EXPAND | wx.ALL, border=5)
 
+        
+        #Horizontal Buttons
+        options_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # Reset Camera button
-        self.reset_btn = wx.Button(self, label="Cycle Center")
-        self.reset_btn.Bind(wx.EVT_BUTTON, self.cyclexz)
-        self.sidebar_sizer.Add(self.reset_btn, flag=wx.EXPAND | wx.ALL, border=5)
+        self.method_select = wx.Choice(self, choices=["custom","ann"])
+        self.method_select.SetSelection(0)  # Default to first choice
+        self.method_select.Bind(wx.EVT_CHOICE, self.on_change_method)
+
+        self.k_select = wx.Choice(self, choices=["k=2","k=3","k=4","k=5","k=6","k=7","k=8","k=9","k=10"])
+        self.k_select.SetSelection(2)  # Default to first choice
+        self.k_select.Bind(wx.EVT_CHOICE, self.on_change_k_select)
+
+        self.r_select = wx.Choice(self, choices=["r=None","r=0","r=1","r=2","r=3","r=4","r=5","r=6","r=7","r=8"])
+        self.r_select.SetSelection(0)  # Default to first choice
+        self.r_select.Bind(wx.EVT_CHOICE, self.on_change_r_select)
+
+        options_sizer.Add(self.method_select, flag=wx.EXPAND | wx.ALL, border=5)
+        options_sizer.Add(self.k_select, flag=wx.EXPAND | wx.ALL, border=5)
+        options_sizer.Add(self.r_select, flag=wx.EXPAND | wx.ALL, border=5)
+        
+        self.sidebar_sizer.Add(options_sizer, flag=wx.EXPAND | wx.ALL, border=5)
 
         # Load Mesh button
         self.load_mesh_btn = wx.Button(self, label="Load Mesh")
-        self.load_mesh_btn.Bind(wx.EVT_BUTTON, self.cycleyz)
+        self.load_mesh_btn.Bind(wx.EVT_BUTTON, self.on_load_mesh)
         self.sidebar_sizer.Add(self.load_mesh_btn, flag=wx.EXPAND | wx.ALL, border=5)
 
 
@@ -225,10 +245,26 @@ class VedoApp(wx.Frame):
         # Add sidebar sizer to the main panel
         self.GetSizer().Add(self.sidebar_sizer, proportion=1, flag=wx.EXPAND | wx.ALL, border=5)
 
+
+    def on_change_method(self,event):
+        status = self.method_select.GetStringSelection()
+        self.search_method = status
+    
+    def on_change_k_select(self,event):
+        status = self.k_select.GetStringSelection()
+        self.search_k = int(status.split("=")[-1])
+    
+    def on_change_r_select(self,event):
+        status = self.k_select.GetStringSelection()
+        if(status=="r=None"):
+            self.search_r=None
+        else:
+            self.search_r = int(status.split("=")[-1])
+
     def on_query(self, event):
         if(self.meshes!=[]):
             offset=1
-            retMeshes = self.retrieval.retrieve_mesh(self.meshes[0],method="custom",k=4)
+            retMeshes = self.retrieval.retrieve_mesh(self.meshes[0],method=self.search_method,k=self.search_k,r=self.search_r)
             for mshpath in retMeshes[1::]:
                 print(mshpath)
                 rmesh = vedo.Mesh(str(mshpath))
@@ -241,12 +277,14 @@ class VedoApp(wx.Frame):
         self.cycle(plane="xz",pos=[0,5,0])
 
     def cycleyz(self,event):
-        self.cycle(plane="yz",pos=[5,0,0])
+        self.cycle(plane="yz",pos=[1,0,0])
 
 
     def cycle(self,plane,pos):
+        self.meshes[self.curcycle].c("gold")
         self.curcycle = (self.curcycle+1)%len(self.meshes)
         curMesh = self.meshes[self.curcycle]
+        curMesh.c("red")
         npos=curMesh.transform.position-pos
         self.plotter.fly_to(npos)
         self.plotter.look_at(plane=plane)
