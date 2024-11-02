@@ -158,7 +158,9 @@ class RetrievalEngine:
             ) / self.non_hist_std
             x = df_x.to_numpy().flatten()
         meta, dist = self.__call__(x, method, k, r)
+        meta = meta.copy()
         meta['dist']=dist
+        meta.sort_values(by="dist")
         return [
             Path("../normshapes") / entry.iloc[1] / entry.iloc[0]
             for _, entry in meta.iterrows()
