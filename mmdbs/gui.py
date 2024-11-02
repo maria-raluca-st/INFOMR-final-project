@@ -5,6 +5,7 @@ import numpy as np
 from normalize import normalize_shape
 from retrieval import RetrievalEngine
 from pathlib import Path
+import pandas as pd
 
 class MyPanel(wx.Panel):
     """This is the custom panel class containing a dropdown and two buttons."""
@@ -135,9 +136,10 @@ class VedoApp(wx.Frame):
         self.widget.Enable(1)
         self.widget.AddObserver("ExitEvent", lambda o, e, f=self: f.Close())
 
+        self.infotext = vedo.Text2D(	txt='Welcome to our 3D search engine, load a mesh and search to get started',	pos='bottom-middle',	s=1.0,	bg=None,	font='',	justify='',	bold=False,	italic=False,	c=None,	alpha=0.5)
         # Set up the vedo plotter with the wx widget
         self.plotter = vedo.Plotter(bg='white', wx_widget=self.widget)
-
+        self.plotter.add(self.infotext)
         # add lines
         self.z_axis = vedo.Line([0,0,0], [0,0,2], lw=3).c("Blue")
         self.y_axis = vedo.Line([0,0,0], [0,2,0], lw=3).c("Green")
@@ -153,7 +155,7 @@ class VedoApp(wx.Frame):
         self.plotter.show(interactive=False)
         self.retrieval = RetrievalEngine()
 
-        self.meta=None
+        self.meta=pd.DataFrame()
 
         self.Layout()
         self.Centre()
@@ -268,9 +270,7 @@ class VedoApp(wx.Frame):
             offset=1
             retMeshes,meta = self.retrieval.retrieve_mesh(self.meshes[0],method=self.search_method,k=self.search_k,r=self.search_r)
             self.meta=meta
-            print(meta)
             for mshpath in retMeshes[1::]:
-                print(mshpath)
                 rmesh = vedo.Mesh(str(mshpath))
                 self.add_panel(rmesh)
                 offset+=1
@@ -290,14 +290,18 @@ class VedoApp(wx.Frame):
         curMesh = self.meshes[self.curcycle]
         curMesh.c("red")
         filename = Path(curMesh.filename).name
-    
-        if(self.meta!=None and filename in self.meta["mesh_name"].values):
-            row = self.meta.loc[self.meta["mesh_name"]==filename][0]
-            print(row)
+        if(not self.meta.empty and filename in self.meta["mesh_name"].values):
+            row = self.meta.loc[self.meta["mesh_name"]==filename].iloc[0]
             infostr = f'Name: {row["mesh_name"]} class:{row["class"]}, dist:{row["dist"]}'
+            self.infotext.text(infostr)
+        else:
+            self.infotext.text("")
+
+
         npos=curMesh.transform.position-pos
         self.plotter.fly_to(npos)
         self.plotter.look_at(plane=plane)
+
         self.plotter.render()
 
     def on_toggle_axes(self, event):
