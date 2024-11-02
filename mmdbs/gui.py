@@ -95,7 +95,10 @@ class MyPanel(wx.Panel):
             self.plt.render()  # Update the plotter view
 
         #self.scroll_sizer.Remove(self)  # Remove panel from sizer
+        #Move other parts closer together
+        start = self.frame.meshes.index(self.mesh)
         self.frame.meshes.remove(self.mesh)
+            
         self.Destroy()  # Destroy the panelinstance 
         self.parent.Layout()  # Refresh the parent layout
         self.parent.FitInside()  # Adjust scrollbars
@@ -122,6 +125,7 @@ class VedoApp(wx.Frame):
         sizer.Add(self.widget, 1, wx.EXPAND)
 
         self.meshes = []
+        self.curcycle=0
 
         # Initialize the interactor
         self.widget.Enable(1)
@@ -176,9 +180,33 @@ class VedoApp(wx.Frame):
         self.reset_btn.Bind(wx.EVT_BUTTON, self.on_reset_camera)
         self.sidebar_sizer.Add(self.reset_btn, flag=wx.EXPAND | wx.ALL, border=5)
 
+        #Horizontal Buttons
+        button_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        # Reset Camera button
+        self.cycle_btn = wx.Button(self, label="Cycle XZ")
+        self.cycle_btn.Bind(wx.EVT_BUTTON, self.cyclexz)
+        
+        # Second button next to reset button
+        self.cycle_2_btn = wx.Button(self, label="Cycle YZ")
+        self.cycle_2_btn.Bind(wx.EVT_BUTTON, self.cycleyz)
+        
+        # Add both buttons to the horizontal sizer
+        button_sizer.Add(self.cycle_btn, flag=wx.EXPAND | wx.ALL, border=5)
+        button_sizer.Add(self.cycle_2_btn, flag=wx.EXPAND | wx.ALL, border=5)
+        
+        # Add the horizontal sizer with buttons to the main sizer
+        self.sidebar_sizer.Add(button_sizer, flag=wx.EXPAND | wx.ALL, border=5)
+
+
+        # Reset Camera button
+        self.reset_btn = wx.Button(self, label="Cycle Center")
+        self.reset_btn.Bind(wx.EVT_BUTTON, self.cyclexz)
+        self.sidebar_sizer.Add(self.reset_btn, flag=wx.EXPAND | wx.ALL, border=5)
+
         # Load Mesh button
         self.load_mesh_btn = wx.Button(self, label="Load Mesh")
-        self.load_mesh_btn.Bind(wx.EVT_BUTTON, self.on_load_mesh)
+        self.load_mesh_btn.Bind(wx.EVT_BUTTON, self.cycleyz)
         self.sidebar_sizer.Add(self.load_mesh_btn, flag=wx.EXPAND | wx.ALL, border=5)
 
 
@@ -199,16 +227,30 @@ class VedoApp(wx.Frame):
 
     def on_query(self, event):
         if(self.meshes!=[]):
+            offset=1
             retMeshes = self.retrieval.retrieve_mesh(self.meshes[0],method="custom",k=4)
             for mshpath in retMeshes[1::]:
                 print(mshpath)
                 rmesh = vedo.Mesh(str(mshpath))
                 self.add_panel(rmesh)
-
+                offset+=1
                 self.plotter.render()
         return
 
+    def cyclexz(self,event):
+        self.cycle(plane="xz",pos=[0,5,0])
 
+    def cycleyz(self,event):
+        self.cycle(plane="yz",pos=[5,0,0])
+
+
+    def cycle(self,plane,pos):
+        self.curcycle = (self.curcycle+1)%len(self.meshes)
+        curMesh = self.meshes[self.curcycle]
+        npos=curMesh.transform.position-pos
+        self.plotter.fly_to(npos)
+        self.plotter.look_at(plane=plane)
+        self.plotter.render()
 
     def on_toggle_axes(self, event):
         """Show or hide the unit axes based on the checkbox state."""
@@ -231,8 +273,13 @@ class VedoApp(wx.Frame):
     def add_panel(self,mesh):
         new_panel = MyPanel(self.scroll_panel, self.scroll_sizer,mesh, self.plotter, self)
         self.scroll_sizer.Add(new_panel, 0, wx.EXPAND | wx.ALL, 5)
-        self.plotter.add(mesh)
         # Refresh the scroll panel
+        offset=len(self.meshes)-1
+        LT = vedo.LinearTransform()
+        LT.translate(mesh.transform.position-[0,0,offset])
+        LT.move(mesh)
+        self.plotter.add(mesh)
+        self.plotter.render()
         self.scroll_panel.Layout()
         self.scroll_panel.FitInside()
         self.scroll_panel.Scroll(0, self.scroll_panel.GetScrollRange(wx.VERTICAL))
