@@ -244,12 +244,11 @@ def calc_D4(mesh: Mesh, num_samples=500):
             volumes.append(np.cbrt(volume))
     return np.array(volumes)
 
-def process_vedo_mesh(mesh:Mesh):
+
+def process_vedo_mesh(mesh: Mesh):
     features = extract_features(mesh)
 
     feature_row = {
-        "mesh_name": mesh.filename,
-        "class": "unknown",
         "area": features["area"],
         "volume": features["volume"],
         "rectangularity": features["rectangularity"],
@@ -257,20 +256,15 @@ def process_vedo_mesh(mesh:Mesh):
         "convexity": features["convexity"],
         "eccentricity": features["eccentricity"],
         "diameter": features["diameter"],
-    }    # Add histograms
+    }  # Add histograms
     for dist_name, dist_values in features["distributions"].items():
         histogram_values = dist_values[0]  # Histogram
-        bin_centers = dist_values[1]  # Bin centers
-
         # Store histogram values
         for bin_idx, bin_value in enumerate(histogram_values):
             feature_row[f"{dist_name}_bin_{bin_idx}"] = bin_value
 
-        # Store bin centers
-        for bin_idx, bin_center in enumerate(bin_centers):
-            feature_row[f"{dist_name}_bin_center_{bin_idx}"] = bin_center
+    df_feature = pd.DataFrame([feature_row])
 
-    df_feature = pd.DataFrame(feature_row)
     return df_feature
 
 
