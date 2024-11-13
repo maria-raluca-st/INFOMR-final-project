@@ -285,7 +285,8 @@ class VedoApp(wx.Frame):
 
 
     def cycle(self,plane,pos):
-        self.meshes[self.curcycle].c("gold")
+        if(self.curcycle<len(self.meshes)):
+            self.meshes[self.curcycle].c("gold")
         self.curcycle = (self.curcycle+1)%len(self.meshes)
         curMesh = self.meshes[self.curcycle]
         curMesh.c("red")
