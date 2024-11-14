@@ -179,12 +179,12 @@ class RetrievalEngine:
     def __call__(self, x, method="custom", k=4, r=None):
         if not method in ("custom", "ann"):
             raise TypeError("Method must be in ('custom', 'ann')")
-        if method == "ann" and r:
+        if method == "ann" and isinstance(r, int):
             return self.ann_retrieve_topr(x, r, k)
         elif method == "ann":
             idx, dist = self.index.query(x.reshape(1, -1), k=k)
             return self.metadata.iloc[idx.flatten()], dist.flatten()
-        elif method == "custom" and r:
+        elif method == "custom" and isinstance(r, int):
             return self.retrieve_topr(x, r=r, k=k)
         else:
             return self.retrieve_topk(x, k=k)

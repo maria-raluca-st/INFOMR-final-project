@@ -259,7 +259,7 @@ class VedoApp(wx.Frame):
         self.search_k = int(status.split("=")[-1])
     
     def on_change_r_select(self,event):
-        status = self.k_select.GetStringSelection()
+        status = self.r_select.GetStringSelection()
         if(status=="r=None"):
             self.search_r=None
         else:
