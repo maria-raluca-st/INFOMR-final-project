@@ -144,6 +144,16 @@ class RetrievalEngine:
         meta, dist = self.retrieve_topk(x, k=k)
         topr_idx = np.argwhere(dist < r).flatten()
         return meta.iloc[topr_idx], dist[topr_idx]
+    
+    def ann_retrieve_topr(self, x, r, k=None, starting_k=10):
+        temp_k = starting_k
+        idx, dist = self.index.query(x.reshape(1, -1), k=temp_k)
+        while not (dist > r).any() and temp_k < self.X.shape[0]:
+            temp_k += temp_k // 2
+            idx, dist = self.index.query(x.reshape(1, -1), k=temp_k)
+
+        idx, dist = idx[dist < r], dist[dist < r]
+        return self.metadata.iloc[idx.flatten()][:k], dist.flatten()[:k]
 
     def retrieve_mesh(self, mesh, method="custom", k=4, r=None):
         name = Path(mesh.filename).name
@@ -169,11 +179,12 @@ class RetrievalEngine:
     def __call__(self, x, method="custom", k=4, r=None):
         if not method in ("custom", "ann"):
             raise TypeError("Method must be in ('custom', 'ann')")
-
-        if method == "ann":
+        if method == "ann" and isinstance(r, int):
+            return self.ann_retrieve_topr(x, r, k)
+        elif method == "ann":
             idx, dist = self.index.query(x.reshape(1, -1), k=k)
             return self.metadata.iloc[idx.flatten()], dist.flatten()
-        elif method == "custom" and r:
+        elif method == "custom" and isinstance(r, int):
             return self.retrieve_topr(x, r=r, k=k)
         else:
             return self.retrieve_topk(x, k=k)
@@ -194,8 +205,14 @@ if __name__ == "__main__":
     meta["dist"] = dist
     print(meta, end="\n\n")
 
-    print("========= Top r=1 ===========")
+    print("========= Top r=0 ===========")
     meta, dist = ret.retrieve_topr(ret.X[56], r=0)
+    meta = meta.copy()
+    meta["dist"] = dist
+    print(meta, end="\n\n")
+
+    print("========= ANN r=0.3 ===========")
+    meta, dist = ret.ann_retrieve_topr(ret.X[56], r=0.3)
     meta = meta.copy()
     meta["dist"] = dist
     print(meta, end="\n\n")
