@@ -24,7 +24,8 @@ This repository contains a content-based retrieval engine for 3D models. The eng
    Clone the repository to your local machine using:
    ```bash
    git clone https://github.com/maria-raluca-st/INFOMR-final-project.git
-   cd 3D-retrieval-engine
+   cd INFOMR-final-project
+
    ```
 
 2. **Create the Conda Environment**
