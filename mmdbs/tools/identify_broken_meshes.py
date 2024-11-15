@@ -23,7 +23,7 @@ def main():
     # Create a pool of worker processes
     pool = multiprocessing.Pool(processes=multiprocessing.cpu_count())
 
-    df = pd.read_csv("./metadata.csv")
+    df = pd.read_csv("INFOMR-final-project/mmdbs/data/metadata.csv")
 
     # Get the list of paths from the DataFrame
     paths = df["Path"].tolist()

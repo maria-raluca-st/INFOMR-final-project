@@ -44,21 +44,8 @@ def get_eigenvectors(mesh: Mesh):
 
 
 def get_center_of_mass(mesh: Mesh):
-    # Naive COmputation: np.mean(mesh.vertices,axis=0)
+    # Naive Computation: np.mean(mesh.vertices,axis=0)
     return mesh.center_of_mass()
-    # Bary Center is the mean of the triangle centers weighed by their area
-    meshVolume = 0
-    temp = (0, 0, 0)
-
-    for i1, i2, i3 in mesh.cells:
-        v1, v2, v3 = mesh.vertices[i1], mesh.vertices[i2], mesh.vertices[i3]
-        center = (v1 + v2 + v3) / 4  # center of tetrahedron
-        volume = np.dot(v1, np.cross(v2, v3)) / 6  # signed volume of tetrahedron
-        meshVolume += volume
-        temp += center * volume
-
-    meshCenter = temp / meshVolume
-    return meshCenter
 
 
 def normalize_position(mesh: Mesh, inplace=True):
@@ -75,13 +62,7 @@ def normalize_position(mesh: Mesh, inplace=True):
     else:
         wMesh = mesh
     com = get_center_of_mass(wMesh)
-    # print("Com Pre", com)
     wMesh.vertices -= com
-    # LT = LinearTransform()
-    # LT.translate(wMesh.transform.position-com)
-    # LT.move(wMesh)
-    # com2 = get_center_of_mass(wMesh)
-    # print("Com Post", com2)
     return wMesh
 
 
@@ -104,26 +85,6 @@ def normalize_pose(mesh: Mesh, inplace=True):
         "compute_matrix_by_principal_axis", pointsflag=True, freeze=True, alllayers=True
     )
     wMesh.vertices = lab_mesh.current_mesh().vertex_matrix()
-
-    # eigenvectors, eigenvalues = get_eigenvectors(wMesh)
-    # ranking = np.argpartition(eigenvalues, 2)
-    # com = get_center_of_mass(mesh)
-    # aligned_matrix = [
-    #     eigenvectors[ranking[2]],
-    #     eigenvectors[ranking[1]],
-    #     np.cross(eigenvectors[ranking[2]], eigenvectors[ranking[1]]),
-    # ]
-    # wMesh.vertices = np.dot(
-    #     wMesh.vertices - com, np.transpose(aligned_matrix)
-    # )  # Simple Crossproduct
-    return wMesh
-    nverts = []  # Manual Method
-    for v in wMesh.vertices:
-        xpos = np.dot(v, eigenvectors[ranking[2]])
-        ypos = np.dot(v, eigenvectors[ranking[1]])
-        zpos = v - np.cross(v, eigenvectors[ranking[0]])
-        nverts.append([xpos, ypos, zpos])
-    wMesh.vertices = nverts
     return wMesh
 
 
@@ -201,18 +162,6 @@ def normalize_scale(mesh: Mesh):
     Dx = np.abs(bbox[0] - bbox[1])
     Dy = np.abs(bbox[2] - bbox[3])
     Dz = np.abs(bbox[4] - bbox[5])
-
-    Dmax = max(Dx, Dy, Dz)  #   # largest dimension of bounding box
-
-    s = 1 / Dmax  # scaling factor
-
-    mesh.scale(s)  # resizing mesh
-
-    return mesh
-
-    Dx = bbox_max[0] - bbox_min[0]
-    Dy = bbox_max[1] - bbox_min[1]
-    Dz = bbox_max[2] - bbox_min[2]
 
     Dmax = max(Dx, Dy, Dz)  #   # largest dimension of bounding box
 
