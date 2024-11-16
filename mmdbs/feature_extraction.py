@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 from normalize import get_center_of_mass, get_eigenvectors
 from tqdm.contrib.concurrent import process_map
+from normalize import normalize_shape
 from vedo import ConvexHull, Mesh
 
 T_RANGE = {  # Theorethical Range of values
@@ -268,10 +269,17 @@ def process_vedo_mesh(mesh: Mesh):
     return df_feature
 
 
-def process_mesh(shape_directory, original_path):
+def process_mesh(shape_directory, original_path, normalize=False, output_directory=""):
     class_name = original_path.parent.name
     mesh_file = str(shape_directory / class_name / original_path.name)
+    #print(mesh_file)
     mesh = Mesh(mesh_file)
+    
+    if(normalize):
+        output_file = str(output_directory / class_name / original_path.name)
+        mesh = normalize_shape(mesh)
+        mesh.write(output_file)
+
 
     features = extract_features(mesh)
 
@@ -304,13 +312,14 @@ def process_mesh(shape_directory, original_path):
 
 
 def extract_dataset_features_from_shapes(
-    manifest, shape_directory="../normshapes", output_file="subset_mesh_features.csv"
+    manifest, shape_directory="../normshapes", output_file="subset_mesh_features.csv", normalize=False, output_directory=""
 ):
     feature_data = []
     skipped = 0
     shape_directory = Path(shape_directory)
+    output_directory = Path(output_directory)
     feature_data = process_map(
-        partial(process_mesh, shape_directory), manifest["Path"].apply(Path)
+        partial(process_mesh, shape_directory, normalize=normalize, output_directory=output_directory), manifest["Path"].apply(Path)
     )
 
     feature_df = pd.DataFrame(feature_data)
@@ -321,17 +330,31 @@ def extract_dataset_features_from_shapes(
     print(f"Feature extraction complete. Features saved to {output_path}.")
     print("Skipped meshes count: " + str(skipped))
 
-
 if __name__ == "__main__":
     # Uncomment these lines if you want to run retrieval on the subset
     # df_manifest_subset = pd.read_csv("./subset_shape_manifest.csv")
     # df_manifest_subset = df_manifest_subset[df_manifest_subset["ReturnCode"] == 0]
     df_manifest = pd.read_csv("./shape_manifest.csv")
     df_manifest = df_manifest[df_manifest["ReturnCode"] == 0]
+    """
+    extract_dataset_features_from_shapes(
+        df_manifest,
+        shape_directory="../shapes",
+        output_file="mesh_features.csv",
+        normalize=True,
+        output_directory="../normshapes",
 
-
+    )
+    """
+    
     extract_dataset_features_from_shapes(
         df_manifest,
         shape_directory="../normshapes",
         output_file="mesh_features.csv",
+        normalize=False,
+        output_directory="..normshapes",
     )
+    
+    
+
+    
