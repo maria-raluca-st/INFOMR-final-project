@@ -58,10 +58,23 @@ This repository contains a content-based retrieval engine for 3D models. The eng
     ```bash
    pip install <package-name>
    ```
+### Adding the Dataset
+For the program to run properly it expects the root directory to contain the normalized dataset called normshapes and the non-normalized dataset called shapes. These can be added separately. To normalize in parallel, navigate to the file `mmdbs\feature_extraction.py` in the main function starting in line 333 and uncomment the following section (lines 339-348)
+```python
+    extract_dataset_features_from_shapes(
+        df_manifest,
+        shape_directory="../shapes",
+        output_file="mesh_features.csv",
+        normalize=True,
+        output_directory="../normshapes,
 
+    )
+    return
+``` 
+Alternatively, you can normalize (monothreaded) using the `preprocessing_stats.ipynb` notebook and set the variable `normalize_shapes` in the first cell to `True`. This will create a folder called `normashapes` in the root directory of the project. 
 ### Usage
 
-After setting up the environment, navigate to the mmdbs folder and start the gui.py file. Please note that the first time executing this will be slow, as it has to build an index of database.
+After setting up the environment and adding the dataset, navigate to the mmdbs folder and start the gui.py file. Please note that the first time executing this will be slow, as it has to build an index of database.
 
 ```bash
 cd mmdbs
