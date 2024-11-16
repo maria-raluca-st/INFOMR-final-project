@@ -21,9 +21,10 @@ This repository contains a content-based retrieval engine for 3D models. The eng
 
 1. **Clone the Repository**
 
-   Clone the repository to your local machine using:
+   Clone the repository (including the shapes git submodule) to your local machine using:
    ```bash
-   git clone https://github.com/maria-raluca-st/INFOMR-final-project.git
+   git clone --recurse-submodules https://github.com/maria-raluca-st/INFOMR-final-project.git
+   # git clone https://github.com/maria-raluca-st/INFOMR-final-project.git  # Alternative when you do not want to include the shapes
    cd INFOMR-final-project
 
    ```
