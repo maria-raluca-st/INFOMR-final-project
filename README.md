@@ -58,10 +58,11 @@ This repository contains a content-based retrieval engine for 3D models. The eng
     ```bash
    pip install <package-name>
    ```
-
+### Adding the Dataset
+For the program to run properly it expects the root directory to contain the normalized dataset called normshapes and the non-normalized dataset called shapes. These can be added separately. To normalize the dataset open the `preprocessing_stats.ipynb` notebook and set the variable `normalize_shapes` in the first cell to `True`. This will create a folder called `normashapes` in the root directory of the project. 
 ### Usage
 
-After setting up the environment, navigate to the mmdbs folder and start the gui.py file. Please note that the first time executing this will be slow, as it has to build an index of database.
+After setting up the environment and adding the dataset, navigate to the mmdbs folder and start the gui.py file. Please note that the first time executing this will be slow, as it has to build an index of database.
 
 ```bash
 cd mmdbs
