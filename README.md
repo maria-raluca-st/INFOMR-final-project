@@ -61,7 +61,7 @@ This repository contains a content-based retrieval engine for 3D models. The eng
 
 ### Usage
 
-After setting up the environment, navigate to the mmdbs folder and start the gui.py file
+After setting up the environment, navigate to the mmdbs folder and start the gui.py file. Please note that the first time executing this will be slow, as it has to build an index of database.
 
 ```bash
 cd mmdbs

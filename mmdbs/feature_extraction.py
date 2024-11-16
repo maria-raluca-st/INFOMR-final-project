@@ -323,15 +323,15 @@ def extract_dataset_features_from_shapes(
 
 
 if __name__ == "__main__":
-    df_manifest_subset = pd.read_csv("./subset_shape_manifest.csv")
-    df_manifest_subset = df_manifest_subset[df_manifest_subset["ReturnCode"] == 0]
+    # Uncomment these lines if you want to run retrieval on the subset
+    # df_manifest_subset = pd.read_csv("./subset_shape_manifest.csv")
+    # df_manifest_subset = df_manifest_subset[df_manifest_subset["ReturnCode"] == 0]
     df_manifest = pd.read_csv("./shape_manifest.csv")
     df_manifest = df_manifest[df_manifest["ReturnCode"] == 0]
 
-    df_manifest = df_manifest[df_manifest["Path"].str.contains("Car")]
 
     extract_dataset_features_from_shapes(
         df_manifest,
         shape_directory="../normshapes",
-        output_file="mesh_features_car.csv",
+        output_file="mesh_features.csv",
     )
